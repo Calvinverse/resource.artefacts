@@ -38,3 +38,58 @@ firewall_rule 'nexus-http' do
   dest_port 8081
   direction :in
 end
+
+#
+# CONNECT TO CONSUL
+#
+
+file '/etc/consul/conf.d/nexus.json' do
+  action :create
+  content <<~JSON
+    {
+      "services": [
+        {
+          "checks": [
+            {
+              "http": "http://localhost:8081/service/metrics/ping",
+              "id": "nexus_api_ping",
+              "interval": "15s",
+              "method": "GET",
+              "name": "Nexus API ping",
+              "timeout": "5s"
+            }
+          ],
+          "enableTagOverride": false,
+          "id": "nexus_api",
+          "name": "artefacts",
+          "port": 8081,
+          "tags": [
+            "active",
+            "read",
+            "write"
+          ]
+        },
+        {
+          "checks" :[
+            {
+              "http": "http://localhost:8081/service/metrics/ping",
+              "id": "nexus_api_ping",
+              "interval": "15s",
+              "method": "GET",
+              "name": "Nexus API ping",
+              "timeout": "5s"
+            }
+          ],
+          "enableTagOverride": false,
+          "id": "nexus_api",
+          "name": "artefacts",
+          "port": 8081,
+          "tags": [
+            "management",
+            "edgeproxyprefix-/artefacts"
+          ]
+        }
+      ]
+    }
+  JSON
+end
