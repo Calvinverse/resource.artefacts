@@ -1,0 +1,19 @@
+Metrics/BlockLength:
+  Max: 50
+  Enabled: false
+
+Metrics/LineLength:
+  Max: 100
+  Enabled: false
+
+Documentation:
+  Enabled: false
+
+AllCops:
+  Exclude:
+    - 'berks/**/*'
+    - 'packages/**/*'
+    - 'src/**/*'
+  DefaultFormatter: progress
+  DisplayStyleGuide: true
+  TargetRubyVersion: 2.3
