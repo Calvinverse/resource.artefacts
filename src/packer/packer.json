@@ -1,0 +1,74 @@
+{
+    "variables": {
+        "admin_username": "admin",
+        "admin_password": "admin",
+
+        "dir_cookbooks_src": "src/cookbooks",
+        "dir_cookbooks_vendors": "packages/vendor/cookbooks",
+        "dir_http_user": null,
+        "dir_temp": null,
+        "dir_vm_import": null,
+
+        "vm_import_directory": null,
+        "vm_name": "not_really_a_vm_name",
+        "vm_ram_size_in_mb": "2048",
+        "vm_switch_name": "this_switch_does_not_exist"
+    },
+    "builders": [
+        {
+            "boot_wait": "5s",
+            "boot_command": [],
+            "clone_from_vmxc_path": "{{ user `dir_vm_import` }}",
+            "communicator": "ssh",
+            "enable_dynamic_memory": false,
+            "enable_mac_spoofing": false,
+            "enable_secure_boot": false,
+            "enable_virtualization_extensions": false,
+            "generation": 2,
+            "guest_additions_mode": "disable",
+            "http_directory": "{{ user `dir_http_user` }}",
+            "http_port_min": 8150,
+            "http_port_max": 8160,
+            "output_directory": "{{ user `dir_temp` }}/{{ user `vm_name` }}",
+            "ram_size": "{{ user `vm_ram_size_in_mb` }}",
+            "shutdown_command": "echo '{{user `admin_password`}}' | sudo -S -E shutdown -P now",
+            "shutdown_timeout": "5m",
+            "skip_compaction": false,
+            "ssh_password": "{{user `admin_password`}}",
+            "ssh_timeout": "4h",
+            "ssh_username": "{{user `admin_username`}}",
+            "switch_name": "{{user `vm_switch_name`}}",
+            "type": "hyperv-vmcx",
+            "vlan_id": "{{ user `vm_switch_vlan` }}",
+            "vm_name": "{{ user `vm_name` }}"
+        }
+    ],
+    "provisioners": [
+        {
+            "execute_command": "echo '{{ user `admin_password` }}' | {{ .Vars }} sudo -E -S sh '{{ .Path }}'",
+            "inline": [
+                "echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers"
+            ],
+            "type": "shell"
+        },
+        {
+            "expect_disconnect": false,
+            "inline": [
+                "sudo -S -E apt-get install curl"
+            ],
+            "type": "shell"
+        },
+        {
+            "cookbook_paths": [
+                "{{ user `dir_cookbooks_vendors` }}"
+            ],
+            "execute_command": "sudo chef-solo --no-color -c {{.ConfigPath}} -j {{.JsonPath}}",
+            "guest_os_type": "unix",
+            "install_command": "curl -LO https://omnitruck.chef.io/install.sh && {{if .Sudo}}sudo{{end}} bash ./install.sh -v 13.5.3 && rm install.sh",
+            "run_list": [
+                "resource_artefacts::default"
+            ],
+            "type": "chef-solo"
+        }
+    ]
+}
