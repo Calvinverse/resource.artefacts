@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<iso>
+    <name>${ProductName}-test-provision</name>
+    <files>
+        <file src="${DirTestsIntegration}\provision\ubuntu\*.*" target="" />
+
+        <file src="${DirTestsIntegration}\provision\shared\consul\*.*" target="consul" />
+        <file src="${DirTestsIntegration}\provision\shared\consul\client\*.*" target="consul\client" />
+
+        <file src="${DirTestsIntegration}\provision\shared\unbound\*.*" target="unbound" />
+    </files>
+</iso>
