@@ -104,10 +104,8 @@ file '/etc/init.d/provision.sh' do
       dos2unix /etc/consul/conf.d/location.json
 
       #
-      # FABIO CONFIGURATION
+      # NEXUS CONFIGURATION
       #
-      cp -a /mnt/dvd/fabio/fabio.properties /etc/fabio.d/fabio.properties
-      dos2unix /etc/fabio.d/fabio.properties
 
       #
       # UNBOUND CONFIGURATION
@@ -125,7 +123,7 @@ file '/etc/init.d/provision.sh' do
       # ENABLE SERVICES
       #
       sudo systemctl enable unbound.service
-      sudo systemctl enable fabio.service
+      sudo systemctl enable nexus.service
 
       # The next line creates an empty file so it won't run the next boot
       touch $FLAG
