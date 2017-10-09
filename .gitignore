@@ -1,0 +1,4 @@
+packages/
+build/
+berks/
+src/cookbooks/resource_artefacts/.bundle/
