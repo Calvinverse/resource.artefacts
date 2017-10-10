@@ -107,6 +107,8 @@ file '/etc/init.d/provision.sh' do
       # NEXUS CONFIGURATION
       #
 
+      # Run the scripts that are in the nexus directory
+
       #
       # UNBOUND CONFIGURATION
       #
