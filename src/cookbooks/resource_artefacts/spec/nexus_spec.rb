@@ -89,6 +89,12 @@ describe 'resource_artefacts::nexus' do
     it 'installs nexus' do
       expect(chef_run).to install_nexus3('nexus')
     end
+
+    it 'disables anonymous access' do
+      expect(chef_run).to run_nexus3_api('anonymous').with(
+        content: 'security.setAnonymousAccess(false)'
+      )
+    end
   end
 
   context 'configures the firewall for consul' do

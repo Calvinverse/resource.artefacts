@@ -89,10 +89,10 @@ nexus3 'nexus' do
   user node['nexus']['service_user']
 end
 
-# Make sure the fabio service doesn't start automatically. This will be changed
-# after we have provisioned the box
-service 'nexus' do
-  action :disable
+# Disable anonymous access
+nexus3_api 'anonymous' do
+  action :run
+  content 'security.setAnonymousAccess(false)'
 end
 
 #
