@@ -127,4 +127,11 @@ describe 'resource_artefacts::nexus' do
     end
   end
 
+  context 'disables the service' do
+    let(:chef_run) { ChefSpec::SoloRunner.converge(described_recipe) }
+
+    it 'disables the nexus service' do
+      expect(chef_run).to disable_service('nexus')
+    end
+  end
 end

@@ -168,3 +168,13 @@ file '/etc/consul/conf.d/nexus.json' do
     }
   JSON
 end
+
+#
+# DISABLE THE SERVICE
+#
+
+# Make sure the nexus service doesn't start automatically. This will be changed
+# after we have provisioned the box
+service 'nexus' do
+  action :disable
+end
