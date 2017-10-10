@@ -54,9 +54,20 @@ WantedBy=multi-user.target
     }
 
     Context 'can be contacted' {
-        $response = Invoke-WebRequest -Uri http://localhost:8081 -UseBasicParsing
+        $response = Invoke-WebRequest `
+            -Uri http://localhost:8081/service/metrics/ping `
+            -UseBasicParsing
         $agentInformation = ConvertFrom-Json $response.Content
-        It 'responds to HTTP calls' {
+        It 'responds to a HTTP ping calls' {
+            $response.StatusCode | Should Be 200
+            $agentInformation | Should Not Be $null
+        }
+
+        $response = Invoke-WebRequest `
+            -Uri http://localhost:8081/service/metrics/healthcheck `
+            -UseBasicParsing
+        $agentInformation = ConvertFrom-Json $response.Content
+        It 'responds to a HTTP ping calls' {
             $response.StatusCode | Should Be 200
             $agentInformation | Should Not Be $null
         }
