@@ -97,7 +97,7 @@ describe 'resource_artefacts::nexus' do
     end
   end
 
-  context 'configures the firewall for consul' do
+  context 'configures the firewall for nexus' do
     let(:chef_run) { ChefSpec::SoloRunner.converge(described_recipe) }
 
     it 'opens the Nexus HTTP port' do
@@ -108,4 +108,23 @@ describe 'resource_artefacts::nexus' do
       )
     end
   end
+
+  context 'registers the service with consul' do
+    let(:chef_run) { ChefSpec::SoloRunner.converge(described_recipe) }
+
+    it 'create a consul user' do
+      expect(chef_run).to run_nexus3_api('userConsul').with(
+        content: "security.addUser('consul.health', 'Consul', 'Health', 'consul.health@example.com', true, 'consul.health', ['nx-metrics-all'])"
+      )
+    end
+
+    consul_service_config_content = <<~JSON
+
+    JSON
+    it 'creates the /etc/consul/conf.d/nexus.json' do
+      expect(chef_run).to create_file('/etc/consul/conf.d/nexus.json')
+        .with_content(consul_service_config_content)
+    end
+  end
+
 end

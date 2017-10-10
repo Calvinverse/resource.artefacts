@@ -110,6 +110,12 @@ end
 # CONNECT TO CONSUL
 #
 
+# Create the user which is used by consul for the health check
+nexus3_api 'userConsul' do
+  action :run
+  content "security.addUser('consul.health', 'Consul', 'Health', 'consul.health@example.com', true, 'consul.health', ['nx-metrics-all'])"
+end
+
 file '/etc/consul/conf.d/nexus.json' do
   action :create
   content <<~JSON
@@ -118,6 +124,7 @@ file '/etc/consul/conf.d/nexus.json' do
         {
           "checks": [
             {
+              "header": { "Authorization" : []}
               "http": "http://localhost:8081/service/metrics/ping",
               "id": "nexus_api_ping",
               "interval": "15s",
@@ -139,6 +146,7 @@ file '/etc/consul/conf.d/nexus.json' do
         {
           "checks" :[
             {
+              "header": { "Authorization" : []}
               "http": "http://localhost:8081/service/metrics/ping",
               "id": "nexus_api_ping",
               "interval": "15s",
