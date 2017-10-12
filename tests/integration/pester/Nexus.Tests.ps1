@@ -55,22 +55,20 @@ Restart=on-abort
     Context 'can be contacted' {
         $response = Invoke-WebRequest `
             -Uri http://localhost:8081/service/metrics/ping `
-            -Headers @{ Authorization = 'Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo' }
+            -Headers @{ Authorization = 'Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo' } `
             -UseBasicParsing
-        $agentInformation = ConvertFrom-Json $response.Content
         It 'responds to a HTTP ping calls' {
             $response.StatusCode | Should Be 200
-            $agentInformation | Should Not Be $null
         }
 
         $response = Invoke-WebRequest `
             -Uri http://localhost:8081/service/metrics/healthcheck `
-            -Headers @{ Authorization = 'Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo' }
+            -Headers @{ Authorization = 'Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo' } `
             -UseBasicParsing
-        $agentInformation = ConvertFrom-Json $response.Content
-        It 'responds to a HTTP ping calls' {
+        $healthInformation = ConvertFrom-Json $response.Content
+        It 'responds to a HTTP health check calls' {
             $response.StatusCode | Should Be 200
-            $agentInformation | Should Not Be $null
+            $healthInformation | Should Not Be $null
         }
     }
 }
