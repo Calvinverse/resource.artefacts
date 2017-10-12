@@ -16,20 +16,19 @@ Describe 'The Nexus artefact server' {
 
         $expectedContent = @'
 [Unit]
-Description=consul
-Wants=network.target
+Description=nexus service
 After=network.target
-
-[Service]
-Environment="GOMAXPROCS=2" "PATH=/usr/local/bin:/usr/bin:/bin"
-ExecStart=/opt/consul/0.9.2/consul agent -config-file=/etc/consul/consul.json -config-dir=/etc/consul/conf.d
-ExecReload=/bin/kill -HUP $MAINPID
-KillSignal=TERM
-User=consul
-WorkingDirectory=/var/lib/consul
 
 [Install]
 WantedBy=multi-user.target
+
+[Service]
+ExecStart=/opt/nexus/bin/nexus start
+Type=forking
+User=nexus
+LimitNOFILE=65536
+ExecStop=/opt/nexus/bin/nexus stop
+Restart=on-abort
 
 '@
         $serviceFileContent = Get-Content $serviceConfigurationPath | Out-String
