@@ -112,9 +112,15 @@ describe 'resource_artefacts::nexus' do
   context 'registers the service with consul' do
     let(:chef_run) { ChefSpec::SoloRunner.converge(described_recipe) }
 
+    it 'create a nexus metrics role' do
+      expect(chef_run).to run_nexus3_api('role-metrics').with(
+        content: "security.addRole('nx-metrics', 'nx-metrics', 'User with privileges to allow read access to the Nexus metrics', ['nx-metrics-all'], ['nx-anonymous'])"
+      )
+    end
+
     it 'create a consul user' do
       expect(chef_run).to run_nexus3_api('userConsul').with(
-        content: "security.addUser('consul.health', 'Consul', 'Health', 'consul.health@example.com', true, 'consul.health', ['nx-metrics-all'])"
+        content: "security.addUser('consul.health', 'Consul', 'Health', 'consul.health@example.com', true, 'consul.health', ['nx-metrics'])"
       )
     end
 

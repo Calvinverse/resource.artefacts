@@ -111,9 +111,16 @@ end
 #
 
 # Create the user which is used by consul for the health check
+nexus3_api 'role-metrics' do
+  content "security.addRole('nx-metrics', 'nx-metrics'," \
+    " 'User with privileges to allow read access to the Nexus metrics'," \
+    " ['nx-metrics-all'], ['nx-anonymous'])"
+  action :run
+end
+
 nexus3_api 'userConsul' do
   action :run
-  content "security.addUser('consul.health', 'Consul', 'Health', 'consul.health@example.com', true, 'consul.health', ['nx-metrics-all'])"
+  content "security.addUser('consul.health', 'Consul', 'Health', 'consul.health@example.com', true, 'consul.health', ['nx-metrics'])"
 end
 
 file '/etc/consul/conf.d/nexus.json' do
