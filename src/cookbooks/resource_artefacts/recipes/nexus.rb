@@ -64,7 +64,7 @@ file '/etc/consul/conf.d/nexus.json' do
         {
           "checks": [
             {
-              "header": { "Authorization" : []}
+              "header": { "Authorization" : ["Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo"]},
               "http": "http://localhost:8081/service/metrics/ping",
               "id": "nexus_api_ping",
               "interval": "15s",
@@ -73,35 +73,15 @@ file '/etc/consul/conf.d/nexus.json' do
               "timeout": "5s"
             }
           ],
-          "enableTagOverride": false,
+          "enableTagOverride": true,
           "id": "nexus_api",
           "name": "artefacts",
           "port": 8081,
           "tags": [
             "active",
+            "edgeproxyprefix-/artefacts",
             "read",
             "write"
-          ]
-        },
-        {
-          "checks" :[
-            {
-              "header": { "Authorization" : []}
-              "http": "http://localhost:8081/service/metrics/ping",
-              "id": "nexus_api_ping",
-              "interval": "15s",
-              "method": "GET",
-              "name": "Nexus API ping",
-              "timeout": "5s"
-            }
-          ],
-          "enableTagOverride": false,
-          "id": "nexus_api",
-          "name": "artefacts",
-          "port": 8081,
-          "tags": [
-            "management",
-            "edgeproxyprefix-/artefacts"
           ]
         }
       ]

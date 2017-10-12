@@ -49,7 +49,33 @@ describe 'resource_artefacts::nexus' do
     end
 
     consul_service_config_content = <<~JSON
-
+      {
+        "services": [
+          {
+            "checks": [
+              {
+                "header": { "Authorization" : ["Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo"]},
+                "http": "http://localhost:8081/service/metrics/ping",
+                "id": "nexus_api_ping",
+                "interval": "15s",
+                "method": "GET",
+                "name": "Nexus API ping",
+                "timeout": "5s"
+              }
+            ],
+            "enableTagOverride": true,
+            "id": "nexus_api",
+            "name": "artefacts",
+            "port": 8081,
+            "tags": [
+              "active",
+              "edgeproxyprefix-/artefacts",
+              "read",
+              "write"
+            ]
+          }
+        ]
+      }
     JSON
     it 'creates the /etc/consul/conf.d/nexus.json' do
       expect(chef_run).to create_file('/etc/consul/conf.d/nexus.json')

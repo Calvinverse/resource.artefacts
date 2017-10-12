@@ -55,6 +55,7 @@ Restart=on-abort
     Context 'can be contacted' {
         $response = Invoke-WebRequest `
             -Uri http://localhost:8081/service/metrics/ping `
+            -Headers @{ Authorization = 'Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo' }
             -UseBasicParsing
         $agentInformation = ConvertFrom-Json $response.Content
         It 'responds to a HTTP ping calls' {
@@ -64,6 +65,7 @@ Restart=on-abort
 
         $response = Invoke-WebRequest `
             -Uri http://localhost:8081/service/metrics/healthcheck `
+            -Headers @{ Authorization = 'Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo' }
             -UseBasicParsing
         $agentInformation = ConvertFrom-Json $response.Content
         It 'responds to a HTTP ping calls' {
