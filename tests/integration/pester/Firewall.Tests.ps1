@@ -5,7 +5,7 @@ Describe 'The firewall' {
         It 'should return a status' {
             $ufwOutput | Should Not Be $null
             $ufwOutput.GetType().FullName | Should Be 'System.Object[]'
-            $ufwOutput.Length | Should Be 27
+            $ufwOutput.Length | Should Be 35
         }
 
         It 'should be enabled' {
@@ -52,6 +52,22 @@ Describe 'The firewall' {
     Context 'should allow nexus' {
         It 'on port 8081' {
             ($ufwOutput | Where-Object {$_ -match '(8081/tcp)\s*(ALLOW)\s*(Anywhere)'} ) | Should Not Be $null
+        }
+
+        It 'on port 5000' {
+            ($ufwOutput | Where-Object {$_ -match '(5000/tcp)\s*(ALLOW)\s*(Anywhere)'} ) | Should Not Be $null
+        }
+
+        It 'on port 5001' {
+            ($ufwOutput | Where-Object {$_ -match '(5001/tcp)\s*(ALLOW)\s*(Anywhere)'} ) | Should Not Be $null
+        }
+
+        It 'on port 5010' {
+            ($ufwOutput | Where-Object {$_ -match '(5001/tcp)\s*(ALLOW)\s*(Anywhere)'} ) | Should Not Be $null
+        }
+
+        It 'on port 5011' {
+            ($ufwOutput | Where-Object {$_ -match '(5001/tcp)\s*(ALLOW)\s*(Anywhere)'} ) | Should Not Be $null
         }
     }
 

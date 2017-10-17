@@ -80,6 +80,11 @@ default['nexus3']['path'] = '/opt'
 default['nexus3']['data'] = '/home/nexus'
 default['nexus3']['home'] = '/opt/nexus'
 
+default['nexus3']['repository']['docker']['port']['http']['hosted'] = 5000
+default['nexus3']['repository']['docker']['port']['https']['hosted'] = 5001
+default['nexus3']['repository']['docker']['port']['http']['mirror'] = 5010
+default['nexus3']['repository']['docker']['port']['https']['mirror'] = 5011
+
 default['nexus']['service_group'] = 'nexus'
 default['nexus']['service_user'] = 'nexus'
 

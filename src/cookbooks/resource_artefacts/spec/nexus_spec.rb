@@ -19,6 +19,94 @@ describe 'resource_artefacts::nexus' do
         content: 'security.setAnonymousAccess(false)'
       )
     end
+
+    it 'deletes the maven-central repository' do
+      expect(chef_run).to run_nexus3_api('delete_repo maven-central')
+    end
+
+    it 'deletes the maven-public repository' do
+      expect(chef_run).to run_nexus3_api('delete_repo maven-public')
+    end
+
+    it 'deletes the maven-releases repository' do
+      expect(chef_run).to run_nexus3_api('delete_repo maven-releases')
+    end
+
+    it 'deletes the maven-snapshots repository' do
+      expect(chef_run).to run_nexus3_api('delete_repo maven-snapshots')
+    end
+
+    it 'deletes the nuget-group repository' do
+      expect(chef_run).to run_nexus3_api('delete_repo nuget-group')
+    end
+
+    it 'deletes the nuget-hosted repository' do
+      expect(chef_run).to run_nexus3_api('delete_repo nuget-hosted')
+    end
+
+    it 'deletes the nuget.org-proxy repository' do
+      expect(chef_run).to run_nexus3_api('delete_repo nuget.org-proxy')
+    end
+
+    it 'deletes the default blob store' do
+      expect(chef_run).to run_nexus3_api('delete_default_blobstore')
+    end
+  end
+
+  context 'creates docker repositories' do
+    let(:chef_run) { ChefSpec::SoloRunner.converge(described_recipe) }
+
+    it 'creates a blob store for hosted docker images' do
+      expect(chef_run).to run_nexus3_api('docker-hosted-blob').with(
+        content: "blobStore.createFileBlobStore('docker_hosted', '/srv/nexus/blob/docker_hosted')"
+      )
+    end
+
+    it 'creates a repository for hosted docker images' do
+      expect(chef_run).to run_nexus3_api('docker-hosted').with(
+        content: "import org.sonatype.nexus.repository.storage.WritePolicy; repository.createDockerHosted('docker', 5000, 5001, 'docker_hosted', true, true, WritePolicy.ALLOW)"
+      )
+    end
+
+    it 'creates a blob store for mirrored docker images' do
+      expect(chef_run).to run_nexus3_api('docker-mirror-blob').with(
+        content: "blobStore.createFileBlobStore('docker_mirror', '/srv/nexus/blob/docker_mirror')"
+      )
+    end
+
+    it 'creates a repository for mirror docker images' do
+      expect(chef_run).to run_nexus3_api('docker-mirror').with(
+        content: "repository.createDockerProxy('hub.docker.io','https://registry-1.docker.io', 'HUB', '', 5010, 5011, 'docker_mirror', true, true)"
+      )
+    end
+  end
+
+  context 'creates nuget repositories' do
+    let(:chef_run) { ChefSpec::SoloRunner.converge(described_recipe) }
+
+    it 'creates a blob store for hosted nuget packages' do
+      expect(chef_run).to run_nexus3_api('nuget-hosted-blob').with(
+        content: "blobStore.createFileBlobStore('nuget_hosted', '/srv/nexus/blob/nuget_hosted')"
+      )
+    end
+
+    it 'creates a repository for hosted nuget packages' do
+      expect(chef_run).to run_nexus3_api('nuget-hosted').with(
+        content: "import org.sonatype.nexus.repository.storage.WritePolicy; repository.createNugetHosted('nuget', 'nuget_hosted', true, WritePolicy.ALLOW_ONCE)"
+      )
+    end
+
+    it 'creates a blob store for mirrored nuget packages' do
+      expect(chef_run).to run_nexus3_api('nuget-mirror-blob').with(
+        content: "blobStore.createFileBlobStore('nuget_mirror', '/srv/nexus/blob/nuget_mirror')"
+      )
+    end
+
+    it 'creates a repository for mirror nuget packages' do
+      expect(chef_run).to run_nexus3_api('nuget-mirror').with(
+        content: "repository.createNugetProxy('nuget.org','https://www.nuget.org/api/v2/', 'nuget_mirror', true)"
+      )
+    end
   end
 
   context 'configures the firewall for nexus' do
@@ -28,6 +116,38 @@ describe 'resource_artefacts::nexus' do
       expect(chef_run).to create_firewall_rule('nexus-http').with(
         command: :allow,
         dest_port: 8081,
+        direction: :in
+      )
+    end
+
+    it 'opens the Docker hosted repository HTTP port' do
+      expect(chef_run).to create_firewall_rule('nexus-docker-hosted-http').with(
+        command: :allow,
+        dest_port: 5000,
+        direction: :in
+      )
+    end
+
+    it 'opens the Docker hosted repository HTTPs port' do
+      expect(chef_run).to create_firewall_rule('nexus-docker-hosted-https').with(
+        command: :allow,
+        dest_port: 5001,
+        direction: :in
+      )
+    end
+
+    it 'opens the Docker mirror repository HTTP port' do
+      expect(chef_run).to create_firewall_rule('nexus-docker-mirror-http').with(
+        command: :allow,
+        dest_port: 5010,
+        direction: :in
+      )
+    end
+
+    it 'opens the Docker mirror repository HTTPs port' do
+      expect(chef_run).to create_firewall_rule('nexus-docker-mirror-https').with(
+        command: :allow,
+        dest_port: 5011,
         direction: :in
       )
     end
@@ -48,7 +168,7 @@ describe 'resource_artefacts::nexus' do
       )
     end
 
-    consul_service_config_content = <<~JSON
+    consul_nexus_management_config_content = <<~JSON
       {
         "services": [
           {
@@ -56,10 +176,10 @@ describe 'resource_artefacts::nexus' do
               {
                 "header": { "Authorization" : ["Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo"]},
                 "http": "http://localhost:8081/service/metrics/ping",
-                "id": "nexus_api_ping",
+                "id": "nexus_management_api_ping",
                 "interval": "15s",
                 "method": "GET",
-                "name": "Nexus API ping",
+                "name": "Nexus management ping",
                 "timeout": "5s"
               }
             ],
@@ -68,18 +188,143 @@ describe 'resource_artefacts::nexus' do
             "name": "artefacts",
             "port": 8081,
             "tags": [
-              "active",
               "edgeproxyprefix-/artefacts",
-              "read",
-              "write"
+              "management",
+              "active-management"
             ]
           }
         ]
       }
     JSON
-    it 'creates the /etc/consul/conf.d/nexus.json' do
-      expect(chef_run).to create_file('/etc/consul/conf.d/nexus.json')
-        .with_content(consul_service_config_content)
+    it 'creates the /etc/consul/conf.d/nexus-management.json' do
+      expect(chef_run).to create_file('/etc/consul/conf.d/nexus-management.json')
+        .with_content(consul_nexus_management_config_content)
+    end
+
+    consul_nexus_docker_hosted_config_content = <<~JSON
+      {
+        "services": [
+          {
+            "checks": [
+              {
+                "header": { "Authorization" : ["Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo"]},
+                "http": "http://localhost:8081/service/metrics/ping",
+                "id": "nexus_docker_hosted_api_ping",
+                "interval": "15s",
+                "method": "GET",
+                "name": "Nexus Docker hosted repository ping",
+                "timeout": "5s"
+              }
+            ],
+            "enableTagOverride": true,
+            "id": "nexus_api",
+            "name": "artefacts",
+            "port": 5000,
+            "tags": [
+              "read-hosted-docker",
+              "write-hosted-docker"
+            ]
+          }
+        ]
+      }
+    JSON
+    it 'creates the /etc/consul/conf.d/nexus-docker-hosted.json' do
+      expect(chef_run).to create_file('/etc/consul/conf.d/nexus-docker-hosted.json')
+        .with_content(consul_nexus_docker_hosted_config_content)
+    end
+
+    consul_nexus_docker_mirror_config_content = <<~JSON
+      {
+        "services": [
+          {
+            "checks": [
+              {
+                "header": { "Authorization" : ["Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo"]},
+                "http": "http://localhost:8081/service/metrics/ping",
+                "id": "nexus_docker_mirror_api_ping",
+                "interval": "15s",
+                "method": "GET",
+                "name": "Nexus Docker mirror repository ping",
+                "timeout": "5s"
+              }
+            ],
+            "enableTagOverride": true,
+            "id": "nexus_api",
+            "name": "artefacts",
+            "port": 5010,
+            "tags": [
+              "read-mirror-docker"
+            ]
+          }
+        ]
+      }
+    JSON
+    it 'creates the /etc/consul/conf.d/nexus-docker-mirror.json' do
+      expect(chef_run).to create_file('/etc/consul/conf.d/nexus-docker-mirror.json')
+        .with_content(consul_nexus_docker_mirror_config_content)
+    end
+
+    consul_nexus_nuget_hosted_config_content = <<~JSON
+      {
+        "services": [
+          {
+            "checks": [
+              {
+                "header": { "Authorization" : ["Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo"]},
+                "http": "http://localhost:8081/service/metrics/ping",
+                "id": "nexus_nuget_hosted_api_ping",
+                "interval": "15s",
+                "method": "GET",
+                "name": "Nexus NuGet hosted repository ping",
+                "timeout": "5s"
+              }
+            ],
+            "enableTagOverride": true,
+            "id": "nexus_api",
+            "name": "artefacts",
+            "port": 8081,
+            "tags": [
+              "read-hosted-nuget",
+              "write-hosted-nuget"
+            ]
+          }
+        ]
+      }
+    JSON
+    it 'creates the /etc/consul/conf.d/nexus-nuget-hosted.json' do
+      expect(chef_run).to create_file('/etc/consul/conf.d/nexus-nuget-hosted.json')
+        .with_content(consul_nexus_nuget_hosted_config_content)
+    end
+
+    consul_nexus_nuget_mirror_config_content = <<~JSON
+      {
+        "services": [
+          {
+            "checks": [
+              {
+                "header": { "Authorization" : ["Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo"]},
+                "http": "http://localhost:8081/service/metrics/ping",
+                "id": "nexus_nuget_mirror_api_ping",
+                "interval": "15s",
+                "method": "GET",
+                "name": "Nexus NuGet hosted repository ping",
+                "timeout": "5s"
+              }
+            ],
+            "enableTagOverride": true,
+            "id": "nexus_api",
+            "name": "artefacts",
+            "port": 8081,
+            "tags": [
+              "read-mirror-nuget"
+            ]
+          }
+        ]
+      }
+    JSON
+    it 'creates the /etc/consul/conf.d/nexus-nuget-mirror.json' do
+      expect(chef_run).to create_file('/etc/consul/conf.d/nexus-nuget-mirror.json')
+        .with_content(consul_nexus_nuget_mirror_config_content)
     end
   end
 
@@ -88,6 +333,21 @@ describe 'resource_artefacts::nexus' do
 
     it 'disables the nexus service' do
       expect(chef_run).to disable_service('nexus')
+    end
+
+    it 'updates the nexus service' do
+      expect(chef_run).to create_systemd_service('nexus').with(
+        action: [:create],
+        after: %w[network.target],
+        description: 'nexus service',
+        wanted_by: %w[multi-user.target],
+        exec_start: '/opt/nexus/bin/nexus start',
+        exec_stop: '/opt/nexus/bin/nexus stop',
+        limit_nofile: 65_536,
+        restart: 'on-abort',
+        type: 'forking',
+        user: 'nexus'
+      )
     end
   end
 end
