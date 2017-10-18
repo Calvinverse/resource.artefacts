@@ -13,6 +13,61 @@ poise_service_user node['nexus']['service_user'] do
 end
 
 #
+# CONFIGURE THE FILE SYSTEM
+#
+
+store_path = '/srv/nexus/blob'
+directory store_path do
+  action :create
+  recursive true
+end
+
+scratch_blob_store_path = "#{store_path}/scratch"
+# filesystem 'nexus_scratch' do
+#   action %i[create enable mount]
+#   device '/dev/sdd'
+#   fstype 'ext4'
+#   mount scratch_blob_store_path
+# end
+
+directory scratch_blob_store_path do
+  action :create
+  group node['nexus']['service_group']
+  mode '777'
+  owner node['nexus']['service_user']
+end
+
+docker_blob_store_path = "#{store_path}/docker"
+# filesystem 'nexus_docker' do
+#   action %i[create enable mount]
+#   device '/dev/sdc'
+#   fstype 'ext4'
+#   mount docker_blob_store_path
+# end
+
+directory docker_blob_store_path do
+  action :create
+  group node['nexus']['service_group']
+  mode '777'
+  owner node['nexus']['service_user']
+end
+
+nuget_blob_store_path = "#{store_path}/nuget"
+# filesystem 'nexus_nuget' do
+#   action %i[create enable mount]
+#   device '/dev/sdb'
+#   fstype 'ext4'
+#   mount nuget_blob_store_path
+# end
+
+directory nuget_blob_store_path do
+  action :create
+  group node['nexus']['service_group']
+  mode '777'
+  owner node['nexus']['service_user']
+end
+
+#
 # INSTALL NEXUS
 #
 
@@ -22,15 +77,10 @@ nexus3 'nexus' do
   user node['nexus']['service_user']
 end
 
-blob_store_path = '/srv/nexus/blob'
-directory blob_store_path do
-  action :create
-  group node['nexus']['service_group']
-  owner node['nexus']['service_user']
-  recursive true
-end
+#
+# DELETE THE DEFAULT REPOSITORIES
+#
 
-# Delete the default repositories
 %w[maven-central maven-public maven-releases maven-snapshots nuget-group nuget-hosted nuget.org-proxy].each do |repo|
   nexus3_api "delete_repo #{repo}" do
     action %i[create run delete]
@@ -52,7 +102,7 @@ end
 
 blob_name_docker_hosted = 'docker_hosted'
 nexus3_api 'docker-hosted-blob' do
-  content "blobStore.createFileBlobStore('#{blob_name_docker_hosted}', '#{blob_store_path}/#{blob_name_docker_hosted}')"
+  content "blobStore.createFileBlobStore('#{blob_name_docker_hosted}', '#{docker_blob_store_path}/#{blob_name_docker_hosted}')"
   action %i[create run delete]
 end
 
@@ -65,7 +115,7 @@ end
 
 blob_name_docker_mirror = 'docker_mirror'
 nexus3_api 'docker-mirror-blob' do
-  content "blobStore.createFileBlobStore('#{blob_name_docker_mirror}', '#{blob_store_path}/#{blob_name_docker_mirror}')"
+  content "blobStore.createFileBlobStore('#{blob_name_docker_mirror}', '#{scratch_blob_store_path}/#{blob_name_docker_mirror}')"
   action %i[create run delete]
 end
 
@@ -83,7 +133,7 @@ end
 
 blob_name_nuget_hosted = 'nuget_hosted'
 nexus3_api 'nuget-hosted-blob' do
-  content "blobStore.createFileBlobStore('#{blob_name_nuget_hosted}', '#{blob_store_path}/#{blob_name_nuget_hosted}')"
+  content "blobStore.createFileBlobStore('#{blob_name_nuget_hosted}', '#{nuget_blob_store_path}/#{blob_name_nuget_hosted}')"
   action %i[create run delete]
 end
 
@@ -95,7 +145,7 @@ end
 
 blob_name_nuget_mirror = 'nuget_mirror'
 nexus3_api 'nuget-mirror-blob' do
-  content "blobStore.createFileBlobStore('#{blob_name_nuget_mirror}', '#{blob_store_path}/#{blob_name_nuget_mirror}')"
+  content "blobStore.createFileBlobStore('#{blob_name_nuget_mirror}', '#{scratch_blob_store_path}/#{blob_name_nuget_mirror}')"
   action %i[create run delete]
 end
 
@@ -314,7 +364,10 @@ file '/etc/consul/conf.d/nexus-nuget-mirror.json' do
   JSON
 end
 
-# Disable anonymous access
+#
+# DISABLE ANONYMOUS ACCESS
+#
+
 nexus3_api 'anonymous' do
   action :run
   content 'security.setAnonymousAccess(false)'
@@ -322,7 +375,7 @@ nexus3_api 'anonymous' do
 end
 
 #
-# DISABLE THE SERVICE
+# UPDATE THE SERVICE
 #
 
 # Make sure the nexus service doesn't start automatically. This will be changed

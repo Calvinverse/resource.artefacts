@@ -52,6 +52,73 @@
             "type": "shell"
         },
         {
+            "command": "New-VHD -Path '{{ user `dir_temp` }}/{{ build_name }}/Virtual Hard Disks/nexus_scratch.vhdx' -SizeBytes 250GB -BlockSizeBytes 1MB",
+            "execute_command": ["Powershell.exe", "-NonInteractive", "-NoLogo", "-NoProfile", "-Command", "{{.Command}}"],
+            "type": "shell-local"
+        },
+        {
+            "command": "Add-VmHardDiskDrive -VMName {{ user `vm_name` }} -Path '{{ user `dir_temp` }}/{{build_name}}/Virtual Hard Disks/nexus_scratch.vhdx'",
+            "execute_command": ["Powershell.exe", "-NonInteractive", "-NoLogo", "-NoProfile", "-Command", "{{.Command}}"],
+            "type": "shell-local"
+        },
+        {
+            "expect_disconnect": false,
+            "inline": [
+                "rescan-scsi-bus.sh --remove --issue-lip",
+                "mkdir /srv/nexus/blob/scratch",
+                "mkfs.ext4 /dev/sdb",
+                "echo \"UUID=$(sudo blkid -s UUID -o value /dev/sdb) /srv/nexus/blob/scratch ext4 defaults 0 0 \" | sudo tee -a /etc/fstab"
+            ],
+            "type": "shell"
+        },
+        {
+            "command": "New-VHD -Path '{{ user `dir_temp` }}/{{ build_name }}/Virtual Hard Disks/nexus_docker.vhdx' -SizeBytes 150GB -BlockSizeBytes 1MB",
+            "execute_command": ["Powershell.exe", "-NonInteractive", "-NoLogo", "-NoProfile", "-Command", "{{.Command}}"],
+            "type": "shell-local"
+        },
+        {
+            "command": "Add-VmHardDiskDrive -VMName {{ user `vm_name` }} -Path '{{ user `dir_temp` }}/{{build_name}}/Virtual Hard Disks/nexus_docker.vhdx'",
+            "execute_command": ["Powershell.exe", "-NonInteractive", "-NoLogo", "-NoProfile", "-Command", "{{.Command}}"],
+            "type": "shell-local"
+        },
+        {
+            "expect_disconnect": false,
+            "inline": [
+                "rescan-scsi-bus.sh --remove --issue-lip",
+                "mkdir /srv/nexus/blob/docker",
+                "mkfs.ext4 /dev/sdc",
+                "echo \"UUID=$(sudo blkid -s UUID -o value /dev/sdc) /srv/nexus/blob/docker ext4 defaults 0 0 \" | sudo tee -a /etc/fstab"
+            ],
+            "type": "shell"
+        },
+        {
+            "command": "New-VHD -Path '{{ user `dir_temp` }}/{{ build_name }}/Virtual Hard Disks/nexus_nuget.vhdx' -SizeBytes 50GB -BlockSizeBytes 1MB",
+            "execute_command": ["Powershell.exe", "-NonInteractive", "-NoLogo", "-NoProfile", "-Command", "{{.Command}}"],
+            "type": "shell-local"
+        },
+        {
+            "command": "Add-VmHardDiskDrive -VMName {{ user `vm_name` }} -Path '{{ user `dir_temp` }}/{{build_name}}/Virtual Hard Disks/nexus_nuget.vhdx'",
+            "execute_command": ["Powershell.exe", "-NonInteractive", "-NoLogo", "-NoProfile", "-Command", "{{.Command}}"],
+            "type": "shell-local"
+        },
+        {
+            "expect_disconnect": false,
+            "inline": [
+                "rescan-scsi-bus.sh --remove --issue-lip",
+                "mkdir /srv/nexus/blob/nuget",
+                "mkfs.ext4 /dev/sdd",
+                "echo \"UUID=$(sudo blkid -s UUID -o value /dev/sdd) /srv/nexus/blob/nuget ext4 defaults 0 0 \" | sudo tee -a /etc/fstab"
+            ],
+            "type": "shell"
+        },
+        {
+            "expect_disconnect": true,
+            "inline": [
+                "sudo shutdown -r now"
+            ],
+            "type": "shell"
+        },
+        {
             "expect_disconnect": false,
             "inline": [
                 "sudo -S -E apt-get install --assume-yes curl"

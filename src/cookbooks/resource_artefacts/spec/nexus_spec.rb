@@ -7,6 +7,34 @@ describe 'resource_artefacts::nexus' do
     let(:chef_run) { ChefSpec::SoloRunner.converge(described_recipe) }
   end
 
+  context 'creates the file system mounts' do
+    let(:chef_run) { ChefSpec::SoloRunner.converge(described_recipe) }
+
+    it 'creates and mounts the nexus_scratch file system at /srv/nexus/blob/scratch' do
+      expect(chef_run).to create_directory('/srv/nexus/blob/scratch').with(
+        group: 'nexus',
+        mode: '777',
+        owner: 'nexus'
+      )
+    end
+
+    it 'creates and mounts the nexus_docker file system at /srv/nexus/blob/docker' do
+      expect(chef_run).to create_directory('/srv/nexus/blob/docker').with(
+        group: 'nexus',
+        mode: '777',
+        owner: 'nexus'
+      )
+    end
+
+    it 'creates and mounts the nexus_nuget file system at /srv/nexus/blob/nuget' do
+      expect(chef_run).to create_directory('/srv/nexus/blob/nuget').with(
+        group: 'nexus',
+        mode: '777',
+        owner: 'nexus'
+      )
+    end
+  end
+
   context 'configures nexus' do
     let(:chef_run) { ChefSpec::SoloRunner.converge(described_recipe) }
 
@@ -58,7 +86,7 @@ describe 'resource_artefacts::nexus' do
 
     it 'creates a blob store for hosted docker images' do
       expect(chef_run).to run_nexus3_api('docker-hosted-blob').with(
-        content: "blobStore.createFileBlobStore('docker_hosted', '/srv/nexus/blob/docker_hosted')"
+        content: "blobStore.createFileBlobStore('docker_hosted', '/srv/nexus/blob/docker/docker_hosted')"
       )
     end
 
@@ -70,7 +98,7 @@ describe 'resource_artefacts::nexus' do
 
     it 'creates a blob store for mirrored docker images' do
       expect(chef_run).to run_nexus3_api('docker-mirror-blob').with(
-        content: "blobStore.createFileBlobStore('docker_mirror', '/srv/nexus/blob/docker_mirror')"
+        content: "blobStore.createFileBlobStore('docker_mirror', '/srv/nexus/blob/scratch/docker_mirror')"
       )
     end
 
@@ -86,7 +114,7 @@ describe 'resource_artefacts::nexus' do
 
     it 'creates a blob store for hosted nuget packages' do
       expect(chef_run).to run_nexus3_api('nuget-hosted-blob').with(
-        content: "blobStore.createFileBlobStore('nuget_hosted', '/srv/nexus/blob/nuget_hosted')"
+        content: "blobStore.createFileBlobStore('nuget_hosted', '/srv/nexus/blob/nuget/nuget_hosted')"
       )
     end
 
@@ -98,7 +126,7 @@ describe 'resource_artefacts::nexus' do
 
     it 'creates a blob store for mirrored nuget packages' do
       expect(chef_run).to run_nexus3_api('nuget-mirror-blob').with(
-        content: "blobStore.createFileBlobStore('nuget_mirror', '/srv/nexus/blob/nuget_mirror')"
+        content: "blobStore.createFileBlobStore('nuget_mirror', '/srv/nexus/blob/scratch/nuget_mirror')"
       )
     end
 
