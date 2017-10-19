@@ -52,6 +52,22 @@
             "type": "shell"
         },
         {
+            "expect_disconnect": false,
+            "inline": [
+                "sudo -S -E apt-get install --assume-yes scsitools"
+            ],
+            "type": "shell"
+        },
+        {
+            "expect_disconnect": false,
+            "inline": [
+                "sudo lsblk -o NAME,FSTYPE,SIZE,MOUNTPOINT,LABEL",
+                "sudo fdisk -l",
+                "sudo blkid -s UUID -o value /dev/sda"
+            ],
+            "type": "shell"
+        },
+        {
             "command": "New-VHD -Path '{{ user `dir_temp` }}/{{ build_name }}/Virtual Hard Disks/nexus_scratch.vhdx' -SizeBytes 250GB -BlockSizeBytes 1MB",
             "execute_command": ["Powershell.exe", "-NonInteractive", "-NoLogo", "-NoProfile", "-Command", "{{.Command}}"],
             "type": "shell-local"
@@ -64,10 +80,20 @@
         {
             "expect_disconnect": false,
             "inline": [
-                "rescan-scsi-bus.sh --remove --issue-lip",
-                "mkdir /srv/nexus/blob/scratch",
-                "mkfs.ext4 /dev/sdb",
+                "sudo rescan-scsi-bus.sh --remove --issue-lip",
+                "sudo mkdir -p /srv/nexus/blob/scratch",
+                "sudo mkfs.ext4 /dev/sdb",
                 "echo \"UUID=$(sudo blkid -s UUID -o value /dev/sdb) /srv/nexus/blob/scratch ext4 defaults 0 0 \" | sudo tee -a /etc/fstab"
+            ],
+            "pause_before" : "15s",
+            "type": "shell"
+        },
+        {
+            "expect_disconnect": false,
+            "inline": [
+                "sudo lsblk -o NAME,FSTYPE,SIZE,MOUNTPOINT,LABEL",
+                "sudo fdisk -l",
+                "sudo blkid -s UUID -o value /dev/sda"
             ],
             "type": "shell"
         },
@@ -84,10 +110,20 @@
         {
             "expect_disconnect": false,
             "inline": [
-                "rescan-scsi-bus.sh --remove --issue-lip",
-                "mkdir /srv/nexus/blob/docker",
-                "mkfs.ext4 /dev/sdc",
+                "sudo rescan-scsi-bus.sh --remove --issue-lip",
+                "sudo mkdir -p /srv/nexus/blob/docker",
+                "sudo mkfs.ext4 /dev/sdc",
                 "echo \"UUID=$(sudo blkid -s UUID -o value /dev/sdc) /srv/nexus/blob/docker ext4 defaults 0 0 \" | sudo tee -a /etc/fstab"
+            ],
+            "pause_before" : "15s",
+            "type": "shell"
+        },
+        {
+            "expect_disconnect": false,
+            "inline": [
+                "sudo lsblk -o NAME,FSTYPE,SIZE,MOUNTPOINT,LABEL",
+                "sudo fdisk -l",
+                "sudo blkid -s UUID -o value /dev/sda"
             ],
             "type": "shell"
         },
@@ -104,10 +140,20 @@
         {
             "expect_disconnect": false,
             "inline": [
-                "rescan-scsi-bus.sh --remove --issue-lip",
-                "mkdir /srv/nexus/blob/nuget",
-                "mkfs.ext4 /dev/sdd",
+                "sudo rescan-scsi-bus.sh --remove --issue-lip",
+                "sudo mkdir -p /srv/nexus/blob/nuget",
+                "sudo mkfs.ext4 /dev/sdd",
                 "echo \"UUID=$(sudo blkid -s UUID -o value /dev/sdd) /srv/nexus/blob/nuget ext4 defaults 0 0 \" | sudo tee -a /etc/fstab"
+            ],
+            "pause_before" : "15s",
+            "type": "shell"
+        },
+        {
+            "expect_disconnect": false,
+            "inline": [
+                "sudo lsblk -o NAME,FSTYPE,SIZE,MOUNTPOINT,LABEL",
+                "sudo fdisk -l",
+                "sudo blkid -s UUID -o value /dev/sda"
             ],
             "type": "shell"
         },
@@ -115,6 +161,15 @@
             "expect_disconnect": true,
             "inline": [
                 "sudo shutdown -r now"
+            ],
+            "type": "shell"
+        },
+        {
+            "expect_disconnect": false,
+            "inline": [
+                "sudo lsblk -o NAME,FSTYPE,SIZE,MOUNTPOINT,LABEL",
+                "sudo fdisk -l",
+                "sudo blkid -s UUID -o value /dev/sda"
             ],
             "type": "shell"
         },
