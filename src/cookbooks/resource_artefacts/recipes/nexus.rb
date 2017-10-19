@@ -228,7 +228,7 @@ file '/etc/consul/conf.d/nexus-management.json' do
             }
           ],
           "enableTagOverride": true,
-          "id": "nexus_api",
+          "id": "nexus_management",
           "name": "artefacts",
           "port": 8081,
           "tags": [
@@ -260,7 +260,7 @@ file '/etc/consul/conf.d/nexus-docker-hosted.json' do
             }
           ],
           "enableTagOverride": true,
-          "id": "nexus_api",
+          "id": "nexus_docker_hosted_api",
           "name": "artefacts",
           "port": #{port_http_docker_hosted},
           "tags": [
@@ -291,7 +291,7 @@ file '/etc/consul/conf.d/nexus-docker-mirror.json' do
             }
           ],
           "enableTagOverride": true,
-          "id": "nexus_api",
+          "id": "nexus_docker_mirror_api",
           "name": "artefacts",
           "port": #{port_http_docker_mirror},
           "tags": [
@@ -321,7 +321,7 @@ file '/etc/consul/conf.d/nexus-nuget-hosted.json' do
             }
           ],
           "enableTagOverride": true,
-          "id": "nexus_api",
+          "id": "nexus_nuget_hosted_api",
           "name": "artefacts",
           "port": 8081,
           "tags": [
@@ -352,7 +352,7 @@ file '/etc/consul/conf.d/nexus-nuget-mirror.json' do
             }
           ],
           "enableTagOverride": true,
-          "id": "nexus_api",
+          "id": "nexus_nuget_mirror_api",
           "name": "artefacts",
           "port": 8081,
           "tags": [

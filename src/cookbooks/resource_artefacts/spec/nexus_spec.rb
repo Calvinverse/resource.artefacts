@@ -212,7 +212,7 @@ describe 'resource_artefacts::nexus' do
               }
             ],
             "enableTagOverride": true,
-            "id": "nexus_api",
+            "id": "nexus_management",
             "name": "artefacts",
             "port": 8081,
             "tags": [
@@ -245,7 +245,7 @@ describe 'resource_artefacts::nexus' do
               }
             ],
             "enableTagOverride": true,
-            "id": "nexus_api",
+            "id": "nexus_docker_hosted_api",
             "name": "artefacts",
             "port": 5000,
             "tags": [
@@ -277,7 +277,7 @@ describe 'resource_artefacts::nexus' do
               }
             ],
             "enableTagOverride": true,
-            "id": "nexus_api",
+            "id": "nexus_docker_mirror_api",
             "name": "artefacts",
             "port": 5010,
             "tags": [
@@ -308,7 +308,7 @@ describe 'resource_artefacts::nexus' do
               }
             ],
             "enableTagOverride": true,
-            "id": "nexus_api",
+            "id": "nexus_nuget_hosted_api",
             "name": "artefacts",
             "port": 8081,
             "tags": [
@@ -340,7 +340,7 @@ describe 'resource_artefacts::nexus' do
               }
             ],
             "enableTagOverride": true,
-            "id": "nexus_api",
+            "id": "nexus_nuget_mirror_api",
             "name": "artefacts",
             "port": 8081,
             "tags": [
