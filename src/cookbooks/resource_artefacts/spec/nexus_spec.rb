@@ -356,6 +356,80 @@ describe 'resource_artefacts::nexus' do
     end
   end
 
+  context 'create roles and users' do
+    let(:chef_run) { ChefSpec::SoloRunner.converge(described_recipe) }
+
+    it 'create a nx-infrastructure-container-pull role' do
+      expect(chef_run).to run_nexus3_api('role-docker-pull').with(
+        content: "security.addRole('nx-infrastructure-container-pull', 'nx-infrastructure-container-pull'," \
+        " 'User with privileges to allow pulling containers from the different container repositories'," \
+        " ['nx-repository-view-docker-*-browse', 'nx-repository-view-docker-*-read'], [''])"
+      )
+    end
+
+    it 'create a nomad user' do
+      expect(chef_run).to run_nexus3_api('userNomad').with(
+        content: "security.addUser('nomad.container.pull', 'Nomad', 'Container.Pull', 'nomad.container.pull@example.com', true, 'nomad.container.pull', ['nx-infrastructure-container-pull'])"
+      )
+    end
+
+    it 'create a nx-builds-pull-containers role' do
+      expect(chef_run).to run_nexus3_api('role-builds-pull-containers').with(
+        content: "security.addRole('nx-builds-pull-containers', 'nx-builds-pull-containers'," \
+        " 'User with privileges to allow pulling containers from the different container repositories'," \
+        " ['nx-repository-view-docker-docker-browse', 'nx-repository-view-docker-docker-read'], [''])"
+      )
+    end
+
+    it 'create a nx-builds-push-containers role' do
+      expect(chef_run).to run_nexus3_api('role-builds-push-containers').with(
+        content: "security.addRole('nx-builds-push-containers', 'nx-builds-push-containers'," \
+        " 'User with privileges to allow pushing containers to the different container repositories'," \
+        " ['nx-repository-view-docker-docker-browse', 'nx-repository-view-docker-docker-read', 'nx-repository-view-docker-docker-add', 'nx-repository-view-docker-docker-edit'], [''])"
+      )
+    end
+
+    it 'create a nx-builds-pull-nuget role' do
+      expect(chef_run).to run_nexus3_api('role-builds-pull-nuget').with(
+        content: "security.addRole('nx-builds-pull-nuget', 'nx-builds-pull-nuget'," \
+        " 'User with privileges to allow pulling packages from the different nuget repositories'," \
+        " ['nx-repository-view-nuget-nuget-browse', 'nx-repository-view-nuget-nuget-read'], [''])"
+      )
+    end
+
+    it 'create a nx-builds-push-nuget role' do
+      expect(chef_run).to run_nexus3_api('role-builds-push-nuget').with(
+        content: "security.addRole('nx-builds-push-nuget', 'nx-builds-push-nuget'," \
+        " 'User with privileges to allow pushing packages to the different nuget repositories'," \
+        " ['nx-repository-view-nuget-nuget-browse', 'nx-repository-view-nuget-nuget-read', 'nx-repository-view-nuget-nuget-add', 'nx-repository-view-nuget-nuget-edit'], [''])"
+      )
+    end
+
+    it 'create a nx-developer-docker role' do
+      expect(chef_run).to run_nexus3_api('role-developer-docker').with(
+        content: "security.addRole('nx-developer-docker', 'nx-developer-docker'," \
+        " 'User with privileges to allow pulling docker containers from the docker repositories'," \
+        " ['nx-repository-view-docker-*-browse', 'nx-repository-view-docker-*-read'], [''])"
+      )
+    end
+
+    it 'create a nx-developer-nuget role' do
+      expect(chef_run).to run_nexus3_api('role-developer-nuget').with(
+        content: "security.addRole('nx-developer-nuget', 'nx-developer-nuget'," \
+        " 'User with privileges to allow pulling nuget packages from the nuget repositories'," \
+        " ['nx-repository-view-nuget-*-browse', 'nx-repository-view-nuget-*-read'], [''])"
+      )
+    end
+
+    it 'create a nx-developer-search role' do
+      expect(chef_run).to run_nexus3_api('role-developer-search').with(
+        content: "security.addRole('nx-developer-search', 'nx-developer-search'," \
+        " 'User with privileges to allow searching for packages in the different repositories'," \
+        " ['nx-search-read', 'nx-selectors-read'], [''])"
+      )
+    end
+  end
+
   context 'disables the service' do
     let(:chef_run) { ChefSpec::SoloRunner.converge(described_recipe) }
 

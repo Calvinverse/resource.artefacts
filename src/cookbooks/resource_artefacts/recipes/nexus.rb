@@ -365,6 +365,80 @@ file '/etc/consul/conf.d/nexus-nuget-mirror.json' do
 end
 
 #
+# CREATE ADDITIONAL ROLES AND USERS
+#
+
+# Create the role which is used by the infrastructure for pulling docker containers
+nexus3_api 'role-docker-pull' do
+  content "security.addRole('nx-infrastructure-container-pull', 'nx-infrastructure-container-pull'," \
+    " 'User with privileges to allow pulling containers from the different container repositories'," \
+    " ['nx-repository-view-docker-*-browse', 'nx-repository-view-docker-*-read'], [''])"
+  action :run
+end
+
+nexus3_api 'userNomad' do
+  action :run
+  content "security.addUser('nomad.container.pull', 'Nomad', 'Container.Pull', 'nomad.container.pull@example.com', true, 'nomad.container.pull', ['nx-infrastructure-container-pull'])"
+end
+
+# Create the role which is used by the build system for pulling docker containers
+nexus3_api 'role-builds-pull-containers' do
+  content "security.addRole('nx-builds-pull-containers', 'nx-builds-pull-containers'," \
+    " 'User with privileges to allow pulling containers from the different container repositories'," \
+    " ['nx-repository-view-docker-docker-browse', 'nx-repository-view-docker-docker-read'], [''])"
+  action :run
+end
+
+# Create the role which is used by the build system for pushing docker containers
+nexus3_api 'role-builds-push-containers' do
+  content "security.addRole('nx-builds-push-containers', 'nx-builds-push-containers'," \
+    " 'User with privileges to allow pushing containers to the different container repositories'," \
+    " ['nx-repository-view-docker-docker-browse', 'nx-repository-view-docker-docker-read', 'nx-repository-view-docker-docker-add', 'nx-repository-view-docker-docker-edit'], [''])"
+  action :run
+end
+
+# Create the role which is used by the build system for pulling nuget packages
+nexus3_api 'role-builds-pull-nuget' do
+  content "security.addRole('nx-builds-pull-nuget', 'nx-builds-pull-nuget'," \
+    " 'User with privileges to allow pulling packages from the different nuget repositories'," \
+    " ['nx-repository-view-nuget-nuget-browse', 'nx-repository-view-nuget-nuget-read'], [''])"
+  action :run
+end
+
+# Create the role which is used by the build system for pushing nuget packages
+nexus3_api 'role-builds-push-nuget' do
+  content "security.addRole('nx-builds-push-nuget', 'nx-builds-push-nuget'," \
+    " 'User with privileges to allow pushing packages to the different nuget repositories'," \
+    " ['nx-repository-view-nuget-nuget-browse', 'nx-repository-view-nuget-nuget-read', 'nx-repository-view-nuget-nuget-add', 'nx-repository-view-nuget-nuget-edit'], [''])"
+  action :run
+end
+
+# Create the role which is used by the developers to read docker repositories
+nexus3_api 'role-developer-docker' do
+  content "security.addRole('nx-developer-docker', 'nx-developer-docker'," \
+    " 'User with privileges to allow pulling docker containers from the docker repositories'," \
+    " ['nx-repository-view-docker-*-browse', 'nx-repository-view-docker-*-read'], [''])"
+  action :run
+end
+
+# Create the role which is used by the developers to read docker repositories
+nexus3_api 'role-developer-nuget' do
+  content "security.addRole('nx-developer-nuget', 'nx-developer-nuget'," \
+    " 'User with privileges to allow pulling nuget packages from the nuget repositories'," \
+    " ['nx-repository-view-nuget-*-browse', 'nx-repository-view-nuget-*-read'], [''])"
+  action :run
+end
+
+# Create the role which is used by the developers to search repositories
+nexus3_api 'role-developer-search' do
+  content "security.addRole('nx-developer-search', 'nx-developer-search'," \
+    " 'User with privileges to allow searching for packages in the different repositories'," \
+    " ['nx-search-read', 'nx-selectors-read'], [''])"
+  action :run
+end
+
+
+#
 # DISABLE ANONYMOUS ACCESS
 #
 
