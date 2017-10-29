@@ -437,7 +437,6 @@ nexus3_api 'role-developer-search' do
   action :run
 end
 
-
 #
 # DISABLE ANONYMOUS ACCESS
 #
