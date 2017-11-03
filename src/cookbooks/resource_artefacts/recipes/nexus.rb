@@ -100,16 +100,29 @@ end
 #
 # See: https://github.com/sonatype/nexus-public/blob/master/plugins/nexus-script-plugin/src/main/java/org/sonatype/nexus/script/plugin/RepositoryApi.java
 
-blob_name_docker_hosted = 'docker_hosted'
-nexus3_api 'docker-hosted-blob' do
-  content "blobStore.createFileBlobStore('#{blob_name_docker_hosted}', '#{docker_blob_store_path}/#{blob_name_docker_hosted}')"
+blob_name_docker_hosted_production = 'docker_production'
+nexus3_api 'docker-production-blob' do
+  content "blobStore.createFileBlobStore('#{blob_name_docker_hosted_production}', '#{docker_blob_store_path}/#{blob_name_docker_hosted_production}')"
   action %i[create run delete]
 end
 
-port_http_docker_hosted = node['nexus3']['repository']['docker']['port']['http']['hosted']
-port_https_docker_hosted = node['nexus3']['repository']['docker']['port']['https']['hosted']
-nexus3_api 'docker-hosted' do
-  content "import org.sonatype.nexus.repository.storage.WritePolicy; repository.createDockerHosted('docker', #{port_http_docker_hosted}, #{port_https_docker_hosted}, '#{blob_name_docker_hosted}', true, true, WritePolicy.ALLOW)"
+port_http_docker_hosted_production = node['nexus3']['repository']['docker']['port']['http']['production']
+port_https_docker_hosted_production = node['nexus3']['repository']['docker']['port']['https']['production']
+nexus3_api 'docker-production' do
+  content "import org.sonatype.nexus.repository.storage.WritePolicy; repository.createDockerHosted('docker-production', #{port_http_docker_hosted_production}, #{port_https_docker_hosted_production}, '#{blob_name_docker_hosted_production}', true, true, WritePolicy.ALLOW_ONCE)"
+  action %i[create run delete]
+end
+
+blob_name_docker_hosted_qa = 'docker_qa'
+nexus3_api 'docker-qa-blob' do
+  content "blobStore.createFileBlobStore('#{blob_name_docker_hosted_qa}', '#{docker_blob_store_path}/#{blob_name_docker_hosted_qa}')"
+  action %i[create run delete]
+end
+
+port_http_docker_hosted_qa = node['nexus3']['repository']['docker']['port']['http']['qa']
+port_https_docker_hosted_qa = node['nexus3']['repository']['docker']['port']['https']['qa']
+nexus3_api 'docker-qa' do
+  content "import org.sonatype.nexus.repository.storage.WritePolicy; repository.createDockerHosted('docker-qa', #{port_http_docker_hosted_qa}, #{port_https_docker_hosted_qa}, '#{blob_name_docker_hosted_qa}', true, true, WritePolicy.ALLOW)"
   action %i[create run delete]
 end
 
@@ -125,6 +138,8 @@ nexus3_api 'docker-mirror' do
   content "repository.createDockerProxy('hub.docker.io','https://registry-1.docker.io', 'HUB', '', #{port_http_docker_mirror}, #{port_https_docker_mirror}, '#{blob_name_docker_mirror}', true, true)"
   action %i[create run delete]
 end
+
+# Set the docker-mirror to allow anonymous access, otherwise it won't mirror: https://issues.sonatype.org/browse/NEXUS-10813
 
 #
 # ADD THE NUGET REPOSITORIES
@@ -165,17 +180,31 @@ firewall_rule 'nexus-http' do
   direction :in
 end
 
-firewall_rule 'nexus-docker-hosted-http' do
+firewall_rule 'nexus-docker-production-http' do
   command :allow
   description 'Allow Docker HTTP traffic'
-  dest_port port_http_docker_hosted
+  dest_port port_http_docker_hosted_production
   direction :in
 end
 
-firewall_rule 'nexus-docker-hosted-https' do
+firewall_rule 'nexus-docker-production-https' do
   command :allow
   description 'Allow Docker HTTPs traffic'
-  dest_port port_https_docker_hosted
+  dest_port port_https_docker_hosted_production
+  direction :in
+end
+
+firewall_rule 'nexus-docker-qa-http' do
+  command :allow
+  description 'Allow Docker HTTP traffic'
+  dest_port port_http_docker_hosted_qa
+  direction :in
+end
+
+firewall_rule 'nexus-docker-qa-https' do
+  command :allow
+  description 'Allow Docker HTTPs traffic'
+  dest_port port_https_docker_hosted_qa
   direction :in
 end
 
@@ -242,7 +271,7 @@ file '/etc/consul/conf.d/nexus-management.json' do
   JSON
 end
 
-file '/etc/consul/conf.d/nexus-docker-hosted.json' do
+file '/etc/consul/conf.d/nexus-docker-production.json' do
   action :create
   content <<~JSON
     {
@@ -252,20 +281,51 @@ file '/etc/consul/conf.d/nexus-docker-hosted.json' do
             {
               "header": { "Authorization" : ["Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo"]},
               "http": "http://localhost:8081/service/metrics/ping",
-              "id": "nexus_docker_hosted_api_ping",
+              "id": "nexus_docker_production_api_ping",
               "interval": "15s",
               "method": "GET",
-              "name": "Nexus Docker hosted repository ping",
+              "name": "Nexus Docker production repository ping",
               "timeout": "5s"
             }
           ],
           "enableTagOverride": true,
-          "id": "nexus_docker_hosted_api",
+          "id": "nexus_docker_production_api",
           "name": "artefacts",
-          "port": #{port_http_docker_hosted},
+          "port": #{port_http_docker_hosted_production},
           "tags": [
-            "read-hosted-docker",
-            "write-hosted-docker"
+            "read-production-docker",
+            "write-production-docker"
+          ]
+        }
+      ]
+    }
+  JSON
+end
+
+file '/etc/consul/conf.d/nexus-docker-qa.json' do
+  action :create
+  content <<~JSON
+    {
+      "services": [
+        {
+          "checks": [
+            {
+              "header": { "Authorization" : ["Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo"]},
+              "http": "http://localhost:8081/service/metrics/ping",
+              "id": "nexus_docker_qa_api_ping",
+              "interval": "15s",
+              "method": "GET",
+              "name": "Nexus Docker QA repository ping",
+              "timeout": "5s"
+            }
+          ],
+          "enableTagOverride": true,
+          "id": "nexus_docker_qa_api",
+          "name": "artefacts",
+          "port": #{port_http_docker_hosted_qa},
+          "tags": [
+            "read-qa-docker",
+            "write-qa-docker"
           ]
         }
       ]
@@ -347,7 +407,7 @@ file '/etc/consul/conf.d/nexus-nuget-mirror.json' do
               "id": "nexus_nuget_mirror_api_ping",
               "interval": "15s",
               "method": "GET",
-              "name": "Nexus NuGet hosted repository ping",
+              "name": "Nexus NuGet mirror repository ping",
               "timeout": "5s"
             }
           ],
@@ -372,7 +432,7 @@ end
 nexus3_api 'role-docker-pull' do
   content "security.addRole('nx-infrastructure-container-pull', 'nx-infrastructure-container-pull'," \
     " 'User with privileges to allow pulling containers from the different container repositories'," \
-    " ['nx-repository-view-docker-*-browse', 'nx-repository-view-docker-*-read'], [''])"
+    " ['nx-repository-view-docker-production-browse', 'nx-repository-view-docker-production-read'], [''])"
   action :run
 end
 
@@ -385,7 +445,7 @@ end
 nexus3_api 'role-builds-pull-containers' do
   content "security.addRole('nx-builds-pull-containers', 'nx-builds-pull-containers'," \
     " 'User with privileges to allow pulling containers from the different container repositories'," \
-    " ['nx-repository-view-docker-docker-browse', 'nx-repository-view-docker-docker-read'], [''])"
+    " ['nx-repository-view-docker-*-browse', 'nx-repository-view-docker-*-read'], [''])"
   action :run
 end
 
@@ -393,7 +453,7 @@ end
 nexus3_api 'role-builds-push-containers' do
   content "security.addRole('nx-builds-push-containers', 'nx-builds-push-containers'," \
     " 'User with privileges to allow pushing containers to the different container repositories'," \
-    " ['nx-repository-view-docker-docker-browse', 'nx-repository-view-docker-docker-read', 'nx-repository-view-docker-docker-add', 'nx-repository-view-docker-docker-edit'], [''])"
+    " ['nx-repository-view-docker-*-browse', 'nx-repository-view-docker-*-read', 'nx-repository-view-docker-*-add', 'nx-repository-view-docker-*-edit'], [''])"
   action :run
 end
 
@@ -401,7 +461,7 @@ end
 nexus3_api 'role-builds-pull-nuget' do
   content "security.addRole('nx-builds-pull-nuget', 'nx-builds-pull-nuget'," \
     " 'User with privileges to allow pulling packages from the different nuget repositories'," \
-    " ['nx-repository-view-nuget-nuget-browse', 'nx-repository-view-nuget-nuget-read'], [''])"
+    " ['nx-repository-view-nuget-*-browse', 'nx-repository-view-nuget-*-read'], [''])"
   action :run
 end
 
@@ -409,22 +469,22 @@ end
 nexus3_api 'role-builds-push-nuget' do
   content "security.addRole('nx-builds-push-nuget', 'nx-builds-push-nuget'," \
     " 'User with privileges to allow pushing packages to the different nuget repositories'," \
-    " ['nx-repository-view-nuget-nuget-browse', 'nx-repository-view-nuget-nuget-read', 'nx-repository-view-nuget-nuget-add', 'nx-repository-view-nuget-nuget-edit'], [''])"
+    " ['nx-repository-view-nuget-*-browse', 'nx-repository-view-nuget-*-read', 'nx-repository-view-nuget-nuget-add', 'nx-repository-view-nuget-nuget-edit'], [''])"
   action :run
 end
 
 # Create the role which is used by the developers to read docker repositories
 nexus3_api 'role-developer-docker' do
   content "security.addRole('nx-developer-docker', 'nx-developer-docker'," \
-    " 'User with privileges to allow pulling docker containers from the docker repositories'," \
+    " 'User with privileges to allow pulling containers from the docker repositories'," \
     " ['nx-repository-view-docker-*-browse', 'nx-repository-view-docker-*-read'], [''])"
   action :run
 end
 
-# Create the role which is used by the developers to read docker repositories
+# Create the role which is used by the developers to read nuget repositories
 nexus3_api 'role-developer-nuget' do
   content "security.addRole('nx-developer-nuget', 'nx-developer-nuget'," \
-    " 'User with privileges to allow pulling nuget packages from the nuget repositories'," \
+    " 'User with privileges to allow pulling packages from the nuget repositories'," \
     " ['nx-repository-view-nuget-*-browse', 'nx-repository-view-nuget-*-read'], [''])"
   action :run
 end
