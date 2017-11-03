@@ -170,15 +170,6 @@
             "type": "shell"
         },
         {
-            "expect_disconnect": false,
-            "inline": [
-                "sudo lsblk -o NAME,FSTYPE,SIZE,MOUNTPOINT,LABEL",
-                "sudo fdisk -l",
-                "sudo blkid -s UUID -o value /dev/sda"
-            ],
-            "type": "shell"
-        },
-        {
             "expect_disconnect": true,
             "inline": [
                 "sudo shutdown -r now"
@@ -186,16 +177,7 @@
             "type": "shell"
         },
         {
-            "expect_disconnect": false,
-            "inline": [
-                "sudo lsblk -o NAME,FSTYPE,SIZE,MOUNTPOINT,LABEL",
-                "sudo fdisk -l",
-                "sudo blkid -s UUID -o value /dev/sda"
-            ],
-            "type": "shell"
-        },
-        {
-            "expect_disconnect": false,
+            "expect_disconnect": true,
             "inline": [
                 "sudo -S -E apt-get install --assume-yes curl"
             ],
