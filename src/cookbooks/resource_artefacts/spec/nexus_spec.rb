@@ -2,6 +2,9 @@
 
 require 'spec_helper'
 
+nexus_management_port = 8081
+nexus_proxy_path = '/artefacts'
+
 describe 'resource_artefacts::nexus' do
   context 'creates the nexus user' do
     let(:chef_run) { ChefSpec::SoloRunner.converge(described_recipe) }
@@ -219,7 +222,7 @@ describe 'resource_artefacts::nexus' do
     it 'opens the Nexus HTTP port' do
       expect(chef_run).to create_firewall_rule('nexus-http').with(
         command: :allow,
-        dest_port: 8081,
+        dest_port: nexus_management_port,
         direction: :in
       )
     end
@@ -295,7 +298,7 @@ describe 'resource_artefacts::nexus' do
             "checks": [
               {
                 "header": { "Authorization" : ["Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo"]},
-                "http": "http://localhost:8081/artefacts/service/metrics/ping",
+                "http": "http://localhost:#{nexus_management_port}#{nexus_proxy_path}/service/metrics/ping",
                 "id": "nexus_management_api_ping",
                 "interval": "15s",
                 "method": "GET",
@@ -306,9 +309,9 @@ describe 'resource_artefacts::nexus' do
             "enableTagOverride": true,
             "id": "nexus_management",
             "name": "artefacts",
-            "port": 8081,
+            "port": #{nexus_management_port},
             "tags": [
-              "edgeproxyprefix-/artefacts",
+              "edgeproxyprefix-#{nexus_proxy_path}",
               "management",
               "active-management"
             ]
@@ -328,7 +331,7 @@ describe 'resource_artefacts::nexus' do
             "checks": [
               {
                 "header": { "Authorization" : ["Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo"]},
-                "http": "http://localhost:8081/artefacts/service/metrics/ping",
+                "http": "http://localhost:#{nexus_management_port}#{nexus_proxy_path}/service/metrics/ping",
                 "id": "nexus_docker_production_api_ping",
                 "interval": "15s",
                 "method": "GET",
@@ -360,7 +363,7 @@ describe 'resource_artefacts::nexus' do
             "checks": [
               {
                 "header": { "Authorization" : ["Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo"]},
-                "http": "http://localhost:8081/artefacts/service/metrics/ping",
+                "http": "http://localhost:#{nexus_management_port}#{nexus_proxy_path}/service/metrics/ping",
                 "id": "nexus_docker_qa_api_ping",
                 "interval": "15s",
                 "method": "GET",
@@ -392,7 +395,7 @@ describe 'resource_artefacts::nexus' do
             "checks": [
               {
                 "header": { "Authorization" : ["Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo"]},
-                "http": "http://localhost:8081/artefacts/service/metrics/ping",
+                "http": "http://localhost:#{nexus_management_port}#{nexus_proxy_path}/service/metrics/ping",
                 "id": "nexus_docker_mirror_api_ping",
                 "interval": "15s",
                 "method": "GET",
@@ -423,7 +426,7 @@ describe 'resource_artefacts::nexus' do
             "checks": [
               {
                 "header": { "Authorization" : ["Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo"]},
-                "http": "http://localhost:8081/artefacts/service/metrics/ping",
+                "http": "http://localhost:#{nexus_management_port}#{nexus_proxy_path}/service/metrics/ping",
                 "id": "nexus_npm_production_api_ping",
                 "interval": "15s",
                 "method": "GET",
@@ -434,7 +437,7 @@ describe 'resource_artefacts::nexus' do
             "enableTagOverride": true,
             "id": "nexus_npm_production_api",
             "name": "artefacts",
-            "port": 8081,
+            "port": #{nexus_management_port},
             "tags": [
               "read-production-npm",
               "write-production-npm"
@@ -455,7 +458,7 @@ describe 'resource_artefacts::nexus' do
             "checks": [
               {
                 "header": { "Authorization" : ["Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo"]},
-                "http": "http://localhost:8081/artefacts/service/metrics/ping",
+                "http": "http://localhost:#{nexus_management_port}#{nexus_proxy_path}/service/metrics/ping",
                 "id": "nexus_npm_qa_api_ping",
                 "interval": "15s",
                 "method": "GET",
@@ -466,7 +469,7 @@ describe 'resource_artefacts::nexus' do
             "enableTagOverride": true,
             "id": "nexus_npm_qa_api",
             "name": "artefacts",
-            "port": 8081,
+            "port": #{nexus_management_port},
             "tags": [
               "read-qa-npm",
               "write-qa-npm"
@@ -487,7 +490,7 @@ describe 'resource_artefacts::nexus' do
             "checks": [
               {
                 "header": { "Authorization" : ["Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo"]},
-                "http": "http://localhost:8081/artefacts/service/metrics/ping",
+                "http": "http://localhost:#{nexus_management_port}#{nexus_proxy_path}/service/metrics/ping",
                 "id": "nexus_npm_mirror_api_ping",
                 "interval": "15s",
                 "method": "GET",
@@ -498,7 +501,7 @@ describe 'resource_artefacts::nexus' do
             "enableTagOverride": true,
             "id": "nexus_npm_mirror_api",
             "name": "artefacts",
-            "port": 8081,
+            "port": #{nexus_management_port},
             "tags": [
               "read-mirror-npm"
             ]
@@ -518,7 +521,7 @@ describe 'resource_artefacts::nexus' do
             "checks": [
               {
                 "header": { "Authorization" : ["Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo"]},
-                "http": "http://localhost:8081/artefacts/service/metrics/ping",
+                "http": "http://localhost:#{nexus_management_port}#{nexus_proxy_path}/service/metrics/ping",
                 "id": "nexus_nuget_production_api_ping",
                 "interval": "15s",
                 "method": "GET",
@@ -529,7 +532,7 @@ describe 'resource_artefacts::nexus' do
             "enableTagOverride": true,
             "id": "nexus_nuget_production_api",
             "name": "artefacts",
-            "port": 8081,
+            "port": #{nexus_management_port},
             "tags": [
               "read-production-nuget",
               "write-production-nuget"
@@ -550,7 +553,7 @@ describe 'resource_artefacts::nexus' do
             "checks": [
               {
                 "header": { "Authorization" : ["Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo"]},
-                "http": "http://localhost:8081/artefacts/service/metrics/ping",
+                "http": "http://localhost:#{nexus_management_port}#{nexus_proxy_path}/service/metrics/ping",
                 "id": "nexus_nuget_mirror_api_ping",
                 "interval": "15s",
                 "method": "GET",
@@ -561,7 +564,7 @@ describe 'resource_artefacts::nexus' do
             "enableTagOverride": true,
             "id": "nexus_nuget_mirror_api",
             "name": "artefacts",
-            "port": 8081,
+            "port": #{nexus_management_port},
             "tags": [
               "read-mirror-nuget"
             ]
@@ -581,7 +584,7 @@ describe 'resource_artefacts::nexus' do
             "checks": [
               {
                 "header": { "Authorization" : ["Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo"]},
-                "http": "http://localhost:8081/artefacts/service/metrics/ping",
+                "http": "http://localhost:#{nexus_management_port}#{nexus_proxy_path}/service/metrics/ping",
                 "id": "nexus_gems_mirror_api_ping",
                 "interval": "15s",
                 "method": "GET",
@@ -592,7 +595,7 @@ describe 'resource_artefacts::nexus' do
             "enableTagOverride": true,
             "id": "nexus_gems_mirror_api",
             "name": "artefacts",
-            "port": 8081,
+            "port": #{nexus_management_port},
             "tags": [
               "read-mirror-gems"
             ]
@@ -740,6 +743,22 @@ describe 'resource_artefacts::nexus' do
         type: 'forking',
         user: 'nexus'
       )
+    end
+  end
+
+  context 'enables the reverse proxy path' do
+    let(:chef_run) { ChefSpec::SoloRunner.converge(described_recipe) }
+
+    nexus_properties_content = <<~PROPERTIES
+      # Jetty section
+      application-port=#{nexus_management_port}
+      application-host=0.0.0.0
+      nexus-args=${jetty.etc}/jetty.xml,${jetty.etc}/jetty-http.xml,${jetty.etc}/jetty-requestlog.xml
+      nexus-context-path=#{nexus_proxy_path}
+    PROPERTIES
+    it 'creates the /home/nexus/etc/nexus.properties' do
+      expect(chef_run).to create_file('/home/nexus/etc/nexus.properties')
+        .with_content(nexus_properties_content)
     end
   end
 end

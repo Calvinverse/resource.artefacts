@@ -64,20 +64,6 @@ nexus3 'nexus' do
   user node['nexus']['service_user']
 end
 
-nexus_management_port = node['nexus3']['port']
-nexus_proxy_path = node['nexus3']['proxy_path']
-nexus_data_path = node['nexus3']['data']
-file "#{nexus_data_path}/etc/nexus.properties" do
-  action :create
-  content <<~PROPERTIES
-    # Jetty section
-    application-port=#{nexus_management_port}
-    application-host=0.0.0.0
-    nexus-args=${jetty.etc}/jetty.xml,${jetty.etc}/jetty-http.xml,${jetty.etc}/jetty-requestlog.xml
-    nexus-context-path=#{nexus_proxy_path}
-  PROPERTIES
-end
-
 #
 # DELETE THE DEFAULT REPOSITORIES
 #
@@ -228,6 +214,7 @@ end
 # ALLOW NEXUS THROUGH THE FIREWALL
 #
 
+nexus_management_port = node['nexus3']['port']
 firewall_rule 'nexus-http' do
   command :allow
   description 'Allow Nexus HTTP traffic'
@@ -294,6 +281,7 @@ nexus3_api 'userConsul' do
   content "security.addUser('consul.health', 'Consul', 'Health', 'consul.health@example.com', true, 'consul.health', ['nx-metrics'])"
 end
 
+nexus_proxy_path = node['nexus3']['proxy_path']
 file '/etc/consul/conf.d/nexus-management.json' do
   action :create
   content <<~JSON
@@ -752,4 +740,20 @@ systemd_service 'nexus' do
     type 'forking'
     user node['nexus']['service_user']
   end
+end
+
+#
+# SET THE PROXY PATH
+#
+
+nexus_data_path = node['nexus3']['data']
+file "#{nexus_data_path}/etc/nexus.properties" do
+  action :create
+  content <<~PROPERTIES
+    # Jetty section
+    application-port=#{nexus_management_port}
+    application-host=0.0.0.0
+    nexus-args=${jetty.etc}/jetty.xml,${jetty.etc}/jetty-http.xml,${jetty.etc}/jetty-requestlog.xml
+    nexus-context-path=#{nexus_proxy_path}
+  PROPERTIES
 end
