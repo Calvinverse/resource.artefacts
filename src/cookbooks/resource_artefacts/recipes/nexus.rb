@@ -64,6 +64,20 @@ nexus3 'nexus' do
   user node['nexus']['service_user']
 end
 
+nexus_management_port = node['nexus3']['port']
+nexus_proxy_path = node['nexus3']['proxy_path']
+nexus_data_path = node['nexus3']['data']
+file "#{nexus_data_path}/etc/nexus.properties" do
+  action :create
+  content <<~PROPERTIES
+    # Jetty section
+    application-port=#{nexus_management_port}
+    application-host=0.0.0.0
+    nexus-args=${jetty.etc}/jetty.xml,${jetty.etc}/jetty-http.xml,${jetty.etc}/jetty-requestlog.xml
+    nexus-context-path=#{nexus_proxy_path}
+  PROPERTIES
+end
+
 #
 # DELETE THE DEFAULT REPOSITORIES
 #
@@ -217,7 +231,7 @@ end
 firewall_rule 'nexus-http' do
   command :allow
   description 'Allow Nexus HTTP traffic'
-  dest_port 8081
+  dest_port nexus_management_port
   direction :in
 end
 
@@ -289,7 +303,7 @@ file '/etc/consul/conf.d/nexus-management.json' do
           "checks": [
             {
               "header": { "Authorization" : ["Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo"]},
-              "http": "http://localhost:8081/service/metrics/ping",
+              "http": "http://localhost:#{nexus_management_port}#{nexus_proxy_path}/service/metrics/ping",
               "id": "nexus_management_api_ping",
               "interval": "15s",
               "method": "GET",
@@ -300,9 +314,9 @@ file '/etc/consul/conf.d/nexus-management.json' do
           "enableTagOverride": true,
           "id": "nexus_management",
           "name": "artefacts",
-          "port": 8081,
+          "port": #{nexus_management_port},
           "tags": [
-            "edgeproxyprefix-/artefacts",
+            "edgeproxyprefix-#{nexus_proxy_path}",
             "management",
             "active-management"
           ]
@@ -321,7 +335,7 @@ file '/etc/consul/conf.d/nexus-docker-production.json' do
           "checks": [
             {
               "header": { "Authorization" : ["Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo"]},
-              "http": "http://localhost:8081/service/metrics/ping",
+              "http": "http://localhost:#{nexus_management_port}#{nexus_proxy_path}/service/metrics/ping",
               "id": "nexus_docker_production_api_ping",
               "interval": "15s",
               "method": "GET",
@@ -352,7 +366,7 @@ file '/etc/consul/conf.d/nexus-docker-qa.json' do
           "checks": [
             {
               "header": { "Authorization" : ["Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo"]},
-              "http": "http://localhost:8081/service/metrics/ping",
+              "http": "http://localhost:#{nexus_management_port}#{nexus_proxy_path}/service/metrics/ping",
               "id": "nexus_docker_qa_api_ping",
               "interval": "15s",
               "method": "GET",
@@ -383,7 +397,7 @@ file '/etc/consul/conf.d/nexus-docker-mirror.json' do
           "checks": [
             {
               "header": { "Authorization" : ["Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo"]},
-              "http": "http://localhost:8081/service/metrics/ping",
+              "http": "http://localhost:#{nexus_management_port}#{nexus_proxy_path}/service/metrics/ping",
               "id": "nexus_docker_mirror_api_ping",
               "interval": "15s",
               "method": "GET",
@@ -413,7 +427,7 @@ file '/etc/consul/conf.d/nexus-npm-production.json' do
           "checks": [
             {
               "header": { "Authorization" : ["Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo"]},
-              "http": "http://localhost:8081/service/metrics/ping",
+              "http": "http://localhost:#{nexus_management_port}#{nexus_proxy_path}/service/metrics/ping",
               "id": "nexus_npm_production_api_ping",
               "interval": "15s",
               "method": "GET",
@@ -424,7 +438,7 @@ file '/etc/consul/conf.d/nexus-npm-production.json' do
           "enableTagOverride": true,
           "id": "nexus_npm_production_api",
           "name": "artefacts",
-          "port": 8081,
+          "port": #{nexus_management_port},
           "tags": [
             "read-production-npm",
             "write-production-npm"
@@ -444,7 +458,7 @@ file '/etc/consul/conf.d/nexus-npm-qa.json' do
           "checks": [
             {
               "header": { "Authorization" : ["Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo"]},
-              "http": "http://localhost:8081/service/metrics/ping",
+              "http": "http://localhost:#{nexus_management_port}#{nexus_proxy_path}/service/metrics/ping",
               "id": "nexus_npm_qa_api_ping",
               "interval": "15s",
               "method": "GET",
@@ -455,7 +469,7 @@ file '/etc/consul/conf.d/nexus-npm-qa.json' do
           "enableTagOverride": true,
           "id": "nexus_npm_qa_api",
           "name": "artefacts",
-          "port": 8081,
+          "port": #{nexus_management_port},
           "tags": [
             "read-qa-npm",
             "write-qa-npm"
@@ -475,7 +489,7 @@ file '/etc/consul/conf.d/nexus-npm-mirror.json' do
           "checks": [
             {
               "header": { "Authorization" : ["Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo"]},
-              "http": "http://localhost:8081/service/metrics/ping",
+              "http": "http://localhost:#{nexus_management_port}#{nexus_proxy_path}/service/metrics/ping",
               "id": "nexus_npm_mirror_api_ping",
               "interval": "15s",
               "method": "GET",
@@ -486,7 +500,7 @@ file '/etc/consul/conf.d/nexus-npm-mirror.json' do
           "enableTagOverride": true,
           "id": "nexus_npm_mirror_api",
           "name": "artefacts",
-          "port": 8081,
+          "port": #{nexus_management_port},
           "tags": [
             "read-mirror-npm"
           ]
@@ -505,7 +519,7 @@ file '/etc/consul/conf.d/nexus-nuget-production.json' do
           "checks": [
             {
               "header": { "Authorization" : ["Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo"]},
-              "http": "http://localhost:8081/service/metrics/ping",
+              "http": "http://localhost:#{nexus_management_port}#{nexus_proxy_path}/service/metrics/ping",
               "id": "nexus_nuget_production_api_ping",
               "interval": "15s",
               "method": "GET",
@@ -516,7 +530,7 @@ file '/etc/consul/conf.d/nexus-nuget-production.json' do
           "enableTagOverride": true,
           "id": "nexus_nuget_production_api",
           "name": "artefacts",
-          "port": 8081,
+          "port": #{nexus_management_port},
           "tags": [
             "read-production-nuget",
             "write-production-nuget"
@@ -536,7 +550,7 @@ file '/etc/consul/conf.d/nexus-nuget-mirror.json' do
           "checks": [
             {
               "header": { "Authorization" : ["Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo"]},
-              "http": "http://localhost:8081/service/metrics/ping",
+              "http": "http://localhost:#{nexus_management_port}#{nexus_proxy_path}/service/metrics/ping",
               "id": "nexus_nuget_mirror_api_ping",
               "interval": "15s",
               "method": "GET",
@@ -547,7 +561,7 @@ file '/etc/consul/conf.d/nexus-nuget-mirror.json' do
           "enableTagOverride": true,
           "id": "nexus_nuget_mirror_api",
           "name": "artefacts",
-          "port": 8081,
+          "port": #{nexus_management_port},
           "tags": [
             "read-mirror-nuget"
           ]
@@ -566,7 +580,7 @@ file '/etc/consul/conf.d/nexus-gems-mirror.json' do
           "checks": [
             {
               "header": { "Authorization" : ["Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo"]},
-              "http": "http://localhost:8081/service/metrics/ping",
+              "http": "http://localhost:#{nexus_management_port}#{nexus_proxy_path}/service/metrics/ping",
               "id": "nexus_gems_mirror_api_ping",
               "interval": "15s",
               "method": "GET",
@@ -577,7 +591,7 @@ file '/etc/consul/conf.d/nexus-gems-mirror.json' do
           "enableTagOverride": true,
           "id": "nexus_gems_mirror_api",
           "name": "artefacts",
-          "port": 8081,
+          "port": #{nexus_management_port},
           "tags": [
             "read-mirror-gems"
           ]

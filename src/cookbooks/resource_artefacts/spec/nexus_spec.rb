@@ -295,7 +295,7 @@ describe 'resource_artefacts::nexus' do
             "checks": [
               {
                 "header": { "Authorization" : ["Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo"]},
-                "http": "http://localhost:8081/service/metrics/ping",
+                "http": "http://localhost:8081/artefacts/service/metrics/ping",
                 "id": "nexus_management_api_ping",
                 "interval": "15s",
                 "method": "GET",
@@ -328,7 +328,7 @@ describe 'resource_artefacts::nexus' do
             "checks": [
               {
                 "header": { "Authorization" : ["Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo"]},
-                "http": "http://localhost:8081/service/metrics/ping",
+                "http": "http://localhost:8081/artefacts/service/metrics/ping",
                 "id": "nexus_docker_production_api_ping",
                 "interval": "15s",
                 "method": "GET",
@@ -360,7 +360,7 @@ describe 'resource_artefacts::nexus' do
             "checks": [
               {
                 "header": { "Authorization" : ["Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo"]},
-                "http": "http://localhost:8081/service/metrics/ping",
+                "http": "http://localhost:8081/artefacts/service/metrics/ping",
                 "id": "nexus_docker_qa_api_ping",
                 "interval": "15s",
                 "method": "GET",
@@ -392,7 +392,7 @@ describe 'resource_artefacts::nexus' do
             "checks": [
               {
                 "header": { "Authorization" : ["Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo"]},
-                "http": "http://localhost:8081/service/metrics/ping",
+                "http": "http://localhost:8081/artefacts/service/metrics/ping",
                 "id": "nexus_docker_mirror_api_ping",
                 "interval": "15s",
                 "method": "GET",
@@ -423,7 +423,7 @@ describe 'resource_artefacts::nexus' do
             "checks": [
               {
                 "header": { "Authorization" : ["Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo"]},
-                "http": "http://localhost:8081/service/metrics/ping",
+                "http": "http://localhost:8081/artefacts/service/metrics/ping",
                 "id": "nexus_npm_production_api_ping",
                 "interval": "15s",
                 "method": "GET",
@@ -455,7 +455,7 @@ describe 'resource_artefacts::nexus' do
             "checks": [
               {
                 "header": { "Authorization" : ["Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo"]},
-                "http": "http://localhost:8081/service/metrics/ping",
+                "http": "http://localhost:8081/artefacts/service/metrics/ping",
                 "id": "nexus_npm_qa_api_ping",
                 "interval": "15s",
                 "method": "GET",
@@ -487,7 +487,7 @@ describe 'resource_artefacts::nexus' do
             "checks": [
               {
                 "header": { "Authorization" : ["Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo"]},
-                "http": "http://localhost:8081/service/metrics/ping",
+                "http": "http://localhost:8081/artefacts/service/metrics/ping",
                 "id": "nexus_npm_mirror_api_ping",
                 "interval": "15s",
                 "method": "GET",
@@ -518,7 +518,7 @@ describe 'resource_artefacts::nexus' do
             "checks": [
               {
                 "header": { "Authorization" : ["Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo"]},
-                "http": "http://localhost:8081/service/metrics/ping",
+                "http": "http://localhost:8081/artefacts/service/metrics/ping",
                 "id": "nexus_nuget_production_api_ping",
                 "interval": "15s",
                 "method": "GET",
@@ -550,7 +550,7 @@ describe 'resource_artefacts::nexus' do
             "checks": [
               {
                 "header": { "Authorization" : ["Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo"]},
-                "http": "http://localhost:8081/service/metrics/ping",
+                "http": "http://localhost:8081/artefacts/service/metrics/ping",
                 "id": "nexus_nuget_mirror_api_ping",
                 "interval": "15s",
                 "method": "GET",
@@ -581,7 +581,7 @@ describe 'resource_artefacts::nexus' do
             "checks": [
               {
                 "header": { "Authorization" : ["Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo"]},
-                "http": "http://localhost:8081/service/metrics/ping",
+                "http": "http://localhost:8081/artefacts/service/metrics/ping",
                 "id": "nexus_gems_mirror_api_ping",
                 "interval": "15s",
                 "method": "GET",
