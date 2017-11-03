@@ -26,6 +26,14 @@ describe 'resource_artefacts::nexus' do
       )
     end
 
+    it 'creates and mounts the nexus_npm file system at /srv/nexus/blob/npm' do
+      expect(chef_run).to create_directory('/srv/nexus/blob/npm').with(
+        group: 'nexus',
+        mode: '777',
+        owner: 'nexus'
+      )
+    end
+
     it 'creates and mounts the nexus_nuget file system at /srv/nexus/blob/nuget' do
       expect(chef_run).to create_directory('/srv/nexus/blob/nuget').with(
         group: 'nexus',
@@ -117,6 +125,46 @@ describe 'resource_artefacts::nexus' do
     it 'creates a repository for mirror docker images' do
       expect(chef_run).to run_nexus3_api('docker-mirror').with(
         content: "repository.createDockerProxy('hub.docker.io','https://registry-1.docker.io', 'HUB', '', 5020, 5021, 'docker_mirror', true, true)"
+      )
+    end
+  end
+
+  context 'creates npm repositories' do
+    let(:chef_run) { ChefSpec::SoloRunner.converge(described_recipe) }
+
+    it 'creates a blob store for production npm packages' do
+      expect(chef_run).to run_nexus3_api('npm-production-blob').with(
+        content: "blobStore.createFileBlobStore('npm_production', '/srv/nexus/blob/npm/npm_production')"
+      )
+    end
+
+    it 'creates a repository for production npm packages' do
+      expect(chef_run).to run_nexus3_api('npm-production').with(
+        content: "import org.sonatype.nexus.repository.storage.WritePolicy; repository.createNpmHosted('npm-production', 'npm_production', true, WritePolicy.ALLOW_ONCE)"
+      )
+    end
+
+    it 'creates a blob store for qa npm packages' do
+      expect(chef_run).to run_nexus3_api('npm-qa-blob').with(
+        content: "blobStore.createFileBlobStore('npm_qa', '/srv/nexus/blob/npm/npm_qa')"
+      )
+    end
+
+    it 'creates a repository for qa npm packages' do
+      expect(chef_run).to run_nexus3_api('npm-qa').with(
+        content: "import org.sonatype.nexus.repository.storage.WritePolicy; repository.createNpmHosted('npm-qa', 'npm_qa', true, WritePolicy.ALLOW)"
+      )
+    end
+
+    it 'creates a blob store for mirrored npm packages' do
+      expect(chef_run).to run_nexus3_api('npm-mirror-blob').with(
+        content: "blobStore.createFileBlobStore('npm_mirror', '/srv/nexus/blob/scratch/npm_mirror')"
+      )
+    end
+
+    it 'creates a repository for mirror npm packages' do
+      expect(chef_run).to run_nexus3_api('npm-mirror').with(
+        content: "repository.createNpmProxy('npmjs.org','https://www.npmjs.org/', 'npm_mirror', true)"
       )
     end
   end
@@ -368,7 +416,7 @@ describe 'resource_artefacts::nexus' do
         .with_content(consul_nexus_docker_mirror_config_content)
     end
 
-    consul_nexus_nuget_hosted_config_content = <<~JSON
+    consul_nexus_npm_production_config_content = <<~JSON
       {
         "services": [
           {
@@ -376,28 +424,123 @@ describe 'resource_artefacts::nexus' do
               {
                 "header": { "Authorization" : ["Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo"]},
                 "http": "http://localhost:8081/service/metrics/ping",
-                "id": "nexus_nuget_hosted_api_ping",
+                "id": "nexus_npm_production_api_ping",
                 "interval": "15s",
                 "method": "GET",
-                "name": "Nexus NuGet hosted repository ping",
+                "name": "Nexus NPM production repository ping",
                 "timeout": "5s"
               }
             ],
             "enableTagOverride": true,
-            "id": "nexus_nuget_hosted_api",
+            "id": "nexus_npm_production_api",
             "name": "artefacts",
             "port": 8081,
             "tags": [
-              "read-hosted-nuget",
-              "write-hosted-nuget"
+              "read-production-npm",
+              "write-production-npm"
             ]
           }
         ]
       }
     JSON
-    it 'creates the /etc/consul/conf.d/nexus-nuget-hosted.json' do
-      expect(chef_run).to create_file('/etc/consul/conf.d/nexus-nuget-hosted.json')
-        .with_content(consul_nexus_nuget_hosted_config_content)
+    it 'creates the /etc/consul/conf.d/nexus-npm-production.json' do
+      expect(chef_run).to create_file('/etc/consul/conf.d/nexus-npm-production.json')
+        .with_content(consul_nexus_npm_production_config_content)
+    end
+
+    consul_nexus_npm_qa_config_content = <<~JSON
+      {
+        "services": [
+          {
+            "checks": [
+              {
+                "header": { "Authorization" : ["Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo"]},
+                "http": "http://localhost:8081/service/metrics/ping",
+                "id": "nexus_npm_qa_api_ping",
+                "interval": "15s",
+                "method": "GET",
+                "name": "Nexus NPM QA repository ping",
+                "timeout": "5s"
+              }
+            ],
+            "enableTagOverride": true,
+            "id": "nexus_npm_qa_api",
+            "name": "artefacts",
+            "port": 8081,
+            "tags": [
+              "read-qa-npm",
+              "write-qa-npm"
+            ]
+          }
+        ]
+      }
+    JSON
+    it 'creates the /etc/consul/conf.d/nexus-npm-qa.json' do
+      expect(chef_run).to create_file('/etc/consul/conf.d/nexus-npm-qa.json')
+        .with_content(consul_nexus_npm_qa_config_content)
+    end
+
+    consul_nexus_npm_mirror_config_content = <<~JSON
+      {
+        "services": [
+          {
+            "checks": [
+              {
+                "header": { "Authorization" : ["Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo"]},
+                "http": "http://localhost:8081/service/metrics/ping",
+                "id": "nexus_npm_mirror_api_ping",
+                "interval": "15s",
+                "method": "GET",
+                "name": "Nexus NPM mirror repository ping",
+                "timeout": "5s"
+              }
+            ],
+            "enableTagOverride": true,
+            "id": "nexus_npm_mirror_api",
+            "name": "artefacts",
+            "port": 8081,
+            "tags": [
+              "read-mirror-npm"
+            ]
+          }
+        ]
+      }
+    JSON
+    it 'creates the /etc/consul/conf.d/nexus-npm-mirror.json' do
+      expect(chef_run).to create_file('/etc/consul/conf.d/nexus-npm-mirror.json')
+        .with_content(consul_nexus_npm_mirror_config_content)
+    end
+
+    consul_nexus_nuget_production_config_content = <<~JSON
+      {
+        "services": [
+          {
+            "checks": [
+              {
+                "header": { "Authorization" : ["Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo"]},
+                "http": "http://localhost:8081/service/metrics/ping",
+                "id": "nexus_nuget_production_api_ping",
+                "interval": "15s",
+                "method": "GET",
+                "name": "Nexus NuGet production repository ping",
+                "timeout": "5s"
+              }
+            ],
+            "enableTagOverride": true,
+            "id": "nexus_nuget_production_api",
+            "name": "artefacts",
+            "port": 8081,
+            "tags": [
+              "read-production-nuget",
+              "write-production-nuget"
+            ]
+          }
+        ]
+      }
+    JSON
+    it 'creates the /etc/consul/conf.d/nexus-nuget-production.json' do
+      expect(chef_run).to create_file('/etc/consul/conf.d/nexus-nuget-production.json')
+        .with_content(consul_nexus_nuget_production_config_content)
     end
 
     consul_nexus_nuget_mirror_config_content = <<~JSON
@@ -496,6 +639,22 @@ describe 'resource_artefacts::nexus' do
       )
     end
 
+    it 'create a nx-builds-pull-npm role' do
+      expect(chef_run).to run_nexus3_api('role-builds-pull-npm').with(
+        content: "security.addRole('nx-builds-pull-npm', 'nx-builds-pull-npm'," \
+        " 'User with privileges to allow pulling packages from the different npm repositories'," \
+        " ['nx-repository-view-npm-*-browse', 'nx-repository-view-npm-*-read'], [''])"
+      )
+    end
+
+    it 'create a nx-builds-push-npm role' do
+      expect(chef_run).to run_nexus3_api('role-builds-push-npm').with(
+        content: "security.addRole('nx-builds-push-npm', 'nx-builds-push-npm'," \
+        " 'User with privileges to allow pushing packages to the different npm repositories'," \
+        " ['nx-repository-view-npm-*-browse', 'nx-repository-view-npm-*-read', 'nx-repository-view-npm-*-add', 'nx-repository-view-npm-*-edit'], [''])"
+      )
+    end
+
     it 'create a nx-builds-pull-nuget role' do
       expect(chef_run).to run_nexus3_api('role-builds-pull-nuget').with(
         content: "security.addRole('nx-builds-pull-nuget', 'nx-builds-pull-nuget'," \
@@ -508,7 +667,7 @@ describe 'resource_artefacts::nexus' do
       expect(chef_run).to run_nexus3_api('role-builds-push-nuget').with(
         content: "security.addRole('nx-builds-push-nuget', 'nx-builds-push-nuget'," \
         " 'User with privileges to allow pushing packages to the different nuget repositories'," \
-        " ['nx-repository-view-nuget-*-browse', 'nx-repository-view-nuget-*-read', 'nx-repository-view-nuget-nuget-add', 'nx-repository-view-nuget-nuget-edit'], [''])"
+        " ['nx-repository-view-nuget-*-browse', 'nx-repository-view-nuget-*-read', 'nx-repository-view-nuget-*-add', 'nx-repository-view-nuget-*-edit'], [''])"
       )
     end
 
@@ -525,6 +684,14 @@ describe 'resource_artefacts::nexus' do
         content: "security.addRole('nx-developer-docker', 'nx-developer-docker'," \
         " 'User with privileges to allow pulling containers from the docker repositories'," \
         " ['nx-repository-view-docker-*-browse', 'nx-repository-view-docker-*-read'], [''])"
+      )
+    end
+
+    it 'create a nx-developer-npm role' do
+      expect(chef_run).to run_nexus3_api('role-developer-npm').with(
+        content: "security.addRole('nx-developer-npm', 'nx-developer-npm'," \
+        " 'User with privileges to allow pulling packages from the npm repositories'," \
+        " ['nx-repository-view-npm-*-browse', 'nx-repository-view-npm-*-read'], [''])"
       )
     end
 

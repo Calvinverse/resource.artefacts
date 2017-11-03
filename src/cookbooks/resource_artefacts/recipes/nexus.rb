@@ -23,13 +23,6 @@ directory store_path do
 end
 
 scratch_blob_store_path = "#{store_path}/scratch"
-# filesystem 'nexus_scratch' do
-#   action %i[create enable mount]
-#   device '/dev/sdd'
-#   fstype 'ext4'
-#   mount scratch_blob_store_path
-# end
-
 directory scratch_blob_store_path do
   action :create
   group node['nexus']['service_group']
@@ -38,13 +31,6 @@ directory scratch_blob_store_path do
 end
 
 docker_blob_store_path = "#{store_path}/docker"
-# filesystem 'nexus_docker' do
-#   action %i[create enable mount]
-#   device '/dev/sdc'
-#   fstype 'ext4'
-#   mount docker_blob_store_path
-# end
-
 directory docker_blob_store_path do
   action :create
   group node['nexus']['service_group']
@@ -52,14 +38,15 @@ directory docker_blob_store_path do
   owner node['nexus']['service_user']
 end
 
-nuget_blob_store_path = "#{store_path}/nuget"
-# filesystem 'nexus_nuget' do
-#   action %i[create enable mount]
-#   device '/dev/sdb'
-#   fstype 'ext4'
-#   mount nuget_blob_store_path
-# end
+npm_blob_store_path = "#{store_path}/npm"
+directory npm_blob_store_path do
+  action :create
+  group node['nexus']['service_group']
+  mode '777'
+  owner node['nexus']['service_user']
+end
 
+nuget_blob_store_path = "#{store_path}/nuget"
 directory nuget_blob_store_path do
   action :create
   group node['nexus']['service_group']
@@ -140,6 +127,44 @@ nexus3_api 'docker-mirror' do
 end
 
 # Set the docker-mirror to allow anonymous access, otherwise it won't mirror: https://issues.sonatype.org/browse/NEXUS-10813
+
+#
+# ADD THE NPM REPOSITORIES
+#
+# See: https://github.com/sonatype/nexus-public/blob/master/plugins/nexus-script-plugin/src/main/java/org/sonatype/nexus/script/plugin/RepositoryApi.java
+
+blob_name_npm_hosted_production = 'npm_production'
+nexus3_api 'npm-production-blob' do
+  content "blobStore.createFileBlobStore('#{blob_name_npm_hosted_production}', '#{npm_blob_store_path}/#{blob_name_npm_hosted_production}')"
+  action %i[create run delete]
+end
+
+nexus3_api 'npm-production' do
+  content "import org.sonatype.nexus.repository.storage.WritePolicy; repository.createNpmHosted('npm-production', '#{blob_name_npm_hosted_production}', true, WritePolicy.ALLOW_ONCE)"
+  action %i[create run delete]
+end
+
+blob_name_npm_hosted_qa = 'npm_qa'
+nexus3_api 'npm-qa-blob' do
+  content "blobStore.createFileBlobStore('#{blob_name_npm_hosted_qa}', '#{npm_blob_store_path}/#{blob_name_npm_hosted_qa}')"
+  action %i[create run delete]
+end
+
+nexus3_api 'npm-qa' do
+  content "import org.sonatype.nexus.repository.storage.WritePolicy; repository.createNpmHosted('npm-qa', '#{blob_name_npm_hosted_qa}', true, WritePolicy.ALLOW)"
+  action %i[create run delete]
+end
+
+blob_name_npm_mirror = 'npm_mirror'
+nexus3_api 'npm-mirror-blob' do
+  content "blobStore.createFileBlobStore('#{blob_name_npm_mirror}', '#{scratch_blob_store_path}/#{blob_name_npm_mirror}')"
+  action %i[create run delete]
+end
+
+nexus3_api 'npm-mirror' do
+  content "repository.createNpmProxy('npmjs.org','https://www.npmjs.org/', '#{blob_name_npm_mirror}', true)"
+  action %i[create run delete]
+end
 
 #
 # ADD THE NUGET REPOSITORIES
@@ -379,7 +404,7 @@ file '/etc/consul/conf.d/nexus-docker-mirror.json' do
   JSON
 end
 
-file '/etc/consul/conf.d/nexus-nuget-hosted.json' do
+file '/etc/consul/conf.d/nexus-npm-production.json' do
   action :create
   content <<~JSON
     {
@@ -389,20 +414,112 @@ file '/etc/consul/conf.d/nexus-nuget-hosted.json' do
             {
               "header": { "Authorization" : ["Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo"]},
               "http": "http://localhost:8081/service/metrics/ping",
-              "id": "nexus_nuget_hosted_api_ping",
+              "id": "nexus_npm_production_api_ping",
               "interval": "15s",
               "method": "GET",
-              "name": "Nexus NuGet hosted repository ping",
+              "name": "Nexus NPM production repository ping",
               "timeout": "5s"
             }
           ],
           "enableTagOverride": true,
-          "id": "nexus_nuget_hosted_api",
+          "id": "nexus_npm_production_api",
           "name": "artefacts",
           "port": 8081,
           "tags": [
-            "read-hosted-nuget",
-            "write-hosted-nuget"
+            "read-production-npm",
+            "write-production-npm"
+          ]
+        }
+      ]
+    }
+  JSON
+end
+
+file '/etc/consul/conf.d/nexus-npm-qa.json' do
+  action :create
+  content <<~JSON
+    {
+      "services": [
+        {
+          "checks": [
+            {
+              "header": { "Authorization" : ["Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo"]},
+              "http": "http://localhost:8081/service/metrics/ping",
+              "id": "nexus_npm_qa_api_ping",
+              "interval": "15s",
+              "method": "GET",
+              "name": "Nexus NPM QA repository ping",
+              "timeout": "5s"
+            }
+          ],
+          "enableTagOverride": true,
+          "id": "nexus_npm_qa_api",
+          "name": "artefacts",
+          "port": 8081,
+          "tags": [
+            "read-qa-npm",
+            "write-qa-npm"
+          ]
+        }
+      ]
+    }
+  JSON
+end
+
+file '/etc/consul/conf.d/nexus-npm-mirror.json' do
+  action :create
+  content <<~JSON
+    {
+      "services": [
+        {
+          "checks": [
+            {
+              "header": { "Authorization" : ["Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo"]},
+              "http": "http://localhost:8081/service/metrics/ping",
+              "id": "nexus_npm_mirror_api_ping",
+              "interval": "15s",
+              "method": "GET",
+              "name": "Nexus NPM mirror repository ping",
+              "timeout": "5s"
+            }
+          ],
+          "enableTagOverride": true,
+          "id": "nexus_npm_mirror_api",
+          "name": "artefacts",
+          "port": 8081,
+          "tags": [
+            "read-mirror-npm"
+          ]
+        }
+      ]
+    }
+  JSON
+end
+
+file '/etc/consul/conf.d/nexus-nuget-production.json' do
+  action :create
+  content <<~JSON
+    {
+      "services": [
+        {
+          "checks": [
+            {
+              "header": { "Authorization" : ["Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo"]},
+              "http": "http://localhost:8081/service/metrics/ping",
+              "id": "nexus_nuget_production_api_ping",
+              "interval": "15s",
+              "method": "GET",
+              "name": "Nexus NuGet production repository ping",
+              "timeout": "5s"
+            }
+          ],
+          "enableTagOverride": true,
+          "id": "nexus_nuget_production_api",
+          "name": "artefacts",
+          "port": 8081,
+          "tags": [
+            "read-production-nuget",
+            "write-production-nuget"
           ]
         }
       ]
@@ -503,6 +620,22 @@ nexus3_api 'role-builds-push-containers' do
   action :run
 end
 
+# Create the role which is used by the build system for pulling npm packages
+nexus3_api 'role-builds-pull-npm' do
+  content "security.addRole('nx-builds-pull-npm', 'nx-builds-pull-npm'," \
+    " 'User with privileges to allow pulling packages from the different npm repositories'," \
+    " ['nx-repository-view-npm-*-browse', 'nx-repository-view-npm-*-read'], [''])"
+  action :run
+end
+
+# Create the role which is used by the build system for pushing nuget packages
+nexus3_api 'role-builds-push-npm' do
+  content "security.addRole('nx-builds-push-npm', 'nx-builds-push-npm'," \
+    " 'User with privileges to allow pushing packages to the different npm repositories'," \
+    " ['nx-repository-view-npm-*-browse', 'nx-repository-view-npm-*-read', 'nx-repository-view-npm-*-add', 'nx-repository-view-npm-*-edit'], [''])"
+  action :run
+end
+
 # Create the role which is used by the build system for pulling nuget packages
 nexus3_api 'role-builds-pull-nuget' do
   content "security.addRole('nx-builds-pull-nuget', 'nx-builds-pull-nuget'," \
@@ -515,7 +648,7 @@ end
 nexus3_api 'role-builds-push-nuget' do
   content "security.addRole('nx-builds-push-nuget', 'nx-builds-push-nuget'," \
     " 'User with privileges to allow pushing packages to the different nuget repositories'," \
-    " ['nx-repository-view-nuget-*-browse', 'nx-repository-view-nuget-*-read', 'nx-repository-view-nuget-nuget-add', 'nx-repository-view-nuget-nuget-edit'], [''])"
+    " ['nx-repository-view-nuget-*-browse', 'nx-repository-view-nuget-*-read', 'nx-repository-view-nuget-*-add', 'nx-repository-view-nuget-*-edit'], [''])"
   action :run
 end
 
@@ -532,6 +665,14 @@ nexus3_api 'role-developer-docker' do
   content "security.addRole('nx-developer-docker', 'nx-developer-docker'," \
     " 'User with privileges to allow pulling containers from the docker repositories'," \
     " ['nx-repository-view-docker-*-browse', 'nx-repository-view-docker-*-read'], [''])"
+  action :run
+end
+
+# Create the role which is used by the developers to read npm repositories
+nexus3_api 'role-developer-npm' do
+  content "security.addRole('nx-developer-npm', 'nx-developer-npm'," \
+    " 'User with privileges to allow pulling packages from the npm repositories'," \
+    " ['nx-repository-view-npm-*-browse', 'nx-repository-view-npm-*-read'], [''])"
   action :run
 end
 
