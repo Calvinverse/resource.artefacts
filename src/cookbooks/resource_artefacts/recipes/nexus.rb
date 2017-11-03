@@ -170,6 +170,22 @@ nexus3_api 'nuget-mirror' do
 end
 
 #
+# ADD THE RUBY GEM REPOSITORIES
+#
+# See: https://github.com/sonatype/nexus-public/blob/master/plugins/nexus-script-plugin/src/main/java/org/sonatype/nexus/script/plugin/RepositoryApi.java
+
+blob_name_gems_mirror = 'gems_mirror'
+nexus3_api 'gems-mirror-blob' do
+  content "blobStore.createFileBlobStore('#{blob_name_gems_mirror}', '#{scratch_blob_store_path}/#{blob_name_gems_mirror}')"
+  action %i[create run delete]
+end
+
+nexus3_api 'gems-mirror' do
+  content "repository.createRubygemsProxy('rubygems.org','https://rubygems.org', '#{blob_name_gems_mirror}', true)"
+  action %i[create run delete]
+end
+
+#
 # ALLOW NEXUS THROUGH THE FIREWALL
 #
 
@@ -424,6 +440,36 @@ file '/etc/consul/conf.d/nexus-nuget-mirror.json' do
   JSON
 end
 
+file '/etc/consul/conf.d/nexus-gems-mirror.json' do
+  action :create
+  content <<~JSON
+    {
+      "services": [
+        {
+          "checks": [
+            {
+              "header": { "Authorization" : ["Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo"]},
+              "http": "http://localhost:8081/service/metrics/ping",
+              "id": "nexus_gems_mirror_api_ping",
+              "interval": "15s",
+              "method": "GET",
+              "name": "Nexus Ruby Gems mirror repository ping",
+              "timeout": "5s"
+            }
+          ],
+          "enableTagOverride": true,
+          "id": "nexus_gems_mirror_api",
+          "name": "artefacts",
+          "port": 8081,
+          "tags": [
+            "read-mirror-gems"
+          ]
+        }
+      ]
+    }
+  JSON
+end
+
 #
 # CREATE ADDITIONAL ROLES AND USERS
 #
@@ -473,6 +519,14 @@ nexus3_api 'role-builds-push-nuget' do
   action :run
 end
 
+# Create the role which is used by the build system for pulling ruby gems packages
+nexus3_api 'role-builds-pull-rubygems' do
+  content "security.addRole('nx-builds-pull-rubygems', 'nx-builds-pull-rubygems'," \
+    " 'User with privileges to allow pulling packages from the different rubygems repositories'," \
+    " ['nx-repository-view-rubygems-*-browse', 'nx-repository-view-rubygems-*-read'], [''])"
+  action :run
+end
+
 # Create the role which is used by the developers to read docker repositories
 nexus3_api 'role-developer-docker' do
   content "security.addRole('nx-developer-docker', 'nx-developer-docker'," \
@@ -486,6 +540,14 @@ nexus3_api 'role-developer-nuget' do
   content "security.addRole('nx-developer-nuget', 'nx-developer-nuget'," \
     " 'User with privileges to allow pulling packages from the nuget repositories'," \
     " ['nx-repository-view-nuget-*-browse', 'nx-repository-view-nuget-*-read'], [''])"
+  action :run
+end
+
+# Create the role which is used by the developers to read gems repositories
+nexus3_api 'role-developer-rubygems' do
+  content "security.addRole('nx-developer-rubygems', 'nx-developer-rubygems'," \
+    " 'User with privileges to allow pulling packages from the ruby gems repositories'," \
+    " ['nx-repository-view-rubygems-*-browse', 'nx-repository-view-rubygems-*-read'], [''])"
   action :run
 end
 
