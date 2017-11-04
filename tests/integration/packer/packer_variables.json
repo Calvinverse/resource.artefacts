@@ -1,0 +1,13 @@
+{
+    "admin_username": "${LocalAdministratorName}",
+    "admin_password": "${LocalAdministratorPassword}",
+
+    "dir_deploy": "${DirDeployJsonEscaped}",
+    "dir_http_user": "${DirTempJsonEscaped}/http",
+    "dir_temp": "${DirTempJsonEscaped}",
+
+    "vm_name": "${ImageName}",
+    "vm_ram_size_in_mb": "2048",
+    "vm_switch_name": "${VmSwitch}",
+    "vm_switch_vlan": "${VmSwitchVlan}"
+}

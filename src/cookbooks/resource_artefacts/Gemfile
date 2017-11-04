@@ -1,0 +1,14 @@
+# frozen_string_literal: true
+
+source 'https://rubygems.org' do
+  # gem 'berkshelf', '~>5.6'
+  gem 'chef', '13.0.118'
+  # gem 'chefspec', '~>7.0'
+  # gem 'chef-sugar', '~>3.4'
+  # gem 'docker-api', '~>1.33'
+  # gem 'foodcritic', '~>10.4'
+  # gem 'kitchen-hyperv', '~>0.4'
+  # gem 'rspec_junit_formatter', '~>0.2'
+  # gem 'rubocop', '~>0.48'
+  # gem 'test-kitchen', '~>1.16'
+end

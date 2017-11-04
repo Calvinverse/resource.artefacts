@@ -1,0 +1,545 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project
+    DefaultTargets="Run"
+    ToolsVersion="14.0"
+    xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <!--
+        **** PREPARE - CALCULATE HASHES ****
+    -->
+    <!--
+        The collection of files for which the hashes need to be calculated. The available hash algorithms
+        are:
+
+        - MD5
+        - SHA1
+        - SHA256
+        - SHA512
+
+        Hash values are stored in a file in the temp directory and can be retrieved with the
+        'ReadHashFromFile' task
+    -->
+    <ItemGroup Condition=" '$(ShouldLoadFilesToHash)' == 'true' ">
+        <!-->
+        <FilesToHash Include="">
+            <Algorithm></Algorithm>
+        </FilesToHash>
+        -->
+    </ItemGroup>
+
+
+    <!--
+        **** PREPARE - COPY FILES ****
+    -->
+    <!--
+        Files that should be copied, either from the file system or from a NuGet package.
+    -->
+    <ItemGroup Condition=" '$(ShouldLoadFilesToCopy)' == 'true' ">
+        <!--
+        <FilesToCopy Include="">
+            <Destination></Destination>
+        </FilesToCopy>
+        -->
+    </ItemGroup>
+    <ItemGroup Condition=" '$(ShouldLoadNuGetFilesToCopy)' == 'true' ">
+        <!--
+        <NuGetFilesToCopy Include="My.Cool.NuGet.Package">
+            <Include>**/*.*</Include>
+            <Destinations>$(DirBuildTemp)</Destinations>
+        </NuGetFilesToCopy>
+        -->
+    </ItemGroup>
+    <ItemGroup Condition=" '$(ShouldLoadArchiveFilesToCopy)' == 'true' ">
+        <!--
+        <ArchiveFilesToCopy Include="">
+            <Destination></Destination>
+        </ArchiveFilesToCopy>
+        -->
+    </ItemGroup>
+
+
+    <!--
+        **** PUSHTO - DIRECTORY / FILESERVER ****
+    -->
+    <!--
+        The ItemGroup defining the files that should be pushed to a given deployment directory.
+
+        The IncludedFiles and the ExcludedFiles are lists of files that
+        should be included (or excluded) in the list of files to deploy. Each entry is separated by a semi-colon(;).
+
+        The PushToDirectorySpecs, IncludedFiles and ExcludedFiles all allow the insertion of build templates,
+        e.g. \\MyServer\${ProductNameInFilePath}\${VersionSemantic}
+    -->
+    <ItemGroup Condition=" '$(ShouldLoadPushToDirectorySpecs)' == 'true' ">
+        <!--<PushToDirectorySpecs Include="\\MyServer\${ProductNameInFilePath}\${VersionSemantic}">
+            <IncludedFiles>
+                $(DirBuildDeploy)\myfile.zip
+            </IncludedFiles>
+            <ExcludedFiles>
+            </ExcludedFiles>
+        </PushToDirectorySpecs>-->
+    </ItemGroup>
+
+
+    <!--
+        **** PUSHTO - NUGET ****
+    -->
+    <PropertyGroup>
+        <!--
+            The URL to which all NuGet packages should be pushed. By default it pushes to nuget.org.
+            If the repository needs authentication then the API key should be defined via an environment variable:
+            NuGetApiKey - The NuGet API key for the NuGet feed
+        -->
+        <!--<NuGetSourceUrl>UNDEFINED</NuGetSourceUrl>-->
+    </PropertyGroup>
+    <!--
+        The ItemGroup defining which packages should be pushed up to the NuGet package source.
+        Allows build templates, e.g. $(DirBuildDeploy)\${VersionSemantic}\*.nupkg.
+    -->
+    <ItemGroup Condition=" '$(ShouldLoadNuGetPackagesToPush)' == 'true' ">
+        <!--
+        <NuGetPackagesToPush
+            Condition=" '$(DirBuildDeploy)' != '' "
+            Include="$(DirBuildDeploy)\*.nupkg"
+            Exclude="$(DirBuildDeploy)\*.symbols.nupkg" />
+        -->
+    </ItemGroup>
+
+
+    <!--
+        **** PUSHTO - SYMBOL SERVER ****
+    -->
+    <!--
+        The ItemGroup defining which symbol packages should be pushed up to the symbol server.
+        Allows build templates, e.g. $(DirBuildDeploy)\${VersionSemantic}\*.symbols.nupkg.
+    -->
+    <PropertyGroup>
+        <!--
+            The URL to which all NuGet symbol packages should be pushed. If the repository needs authentication then
+            the API key should be defined via an environment variable:
+            NuGetApiKey - The NuGet API key for the NuGet feed
+        -->
+        <!--<NuGetSymbolSourceUrl>UNDEFINED</NuGetSymbolSourceUrl>-->
+        <!--
+            The URL / UNC path to which all the symbol packages should be pushed.
+        -->
+        <!--<SymbolServerUncPath>UNDEFINED</SymbolServerUncPath>-->
+    </PropertyGroup>
+    <ItemGroup Condition=" '$(ShouldLoadSymbolPackagesToPush)' == 'true' ">
+        <!--
+        <SymbolPackagesToPush
+            Condition=" '$(DirBuildDeploy)' != '' "
+            Include="$(DirBuildDeploy)\*.symbols.nupkg" />
+        -->
+    </ItemGroup>
+
+
+    <!--
+        **** PUSHTO - GITHUB RELEASE ****
+    -->
+    <!--
+        The ItemGroup defining the files that should be pushed to a GitHub release. All properties
+        except for the Repository allow the use of build templates, e.g. $(DirBuildDeploy)\myarchive-${VersionSemantic}.zip
+    -->
+    <ItemGroup Condition=" '$(ShouldLoadPushToGitHubReleaseSpecs)' == 'true' ">
+        <!--
+        <PushToGitHubReleaseSpecs Include="${VersionSemantic} - My release">
+             <Repository>MyCoolProject</Repository>
+             <Description>${ReleaseNotes}</Description>
+             <IncludedFiles>
+                $(DirBuildDeploy)\myarchive-${VersionSemantic}.zip
+             </IncludedFiles>
+             <ExcludedFiles>
+             </ExcludedFiles>
+        </PushToGitHubReleaseSpecs>
+        -->
+    </ItemGroup>
+
+
+    <!--
+        **** PUSHTO - GIT BRANCH ****
+    -->
+    <!--
+        The ItemGroup defining the files that should be pushed to a GIT branch. All properties
+        allow the use of build templates, e.g. $(DirBuildDeploy)\myarchive-${VersionSemantic}.zip
+    -->
+    <ItemGroup Condition=" '$(ShouldLoadPushToGitBranchSpecs)' == 'true' ">
+        <!--
+        <PushToGitBranchSpecs
+            Condition=" '$(DirBuildDeploy)' != '' "
+            Include="$(DirBuildDeploy)\myarchive-${VersionSemantic}.zip">
+             <Repository>$(GitRemoteRepository)</Repository>
+             <Branch>master</Branch>
+             <ExtractZipFiles>true</ExtractZipFiles>
+             <CommitMessage>New changes</CommitMessage>
+        </PushToGitBranchSpecs>
+        -->
+    </ItemGroup>
+
+
+    <!--
+        **** PUSHTO - GIT REPOSITORY ****
+    -->
+    <!--
+        The ItemGroup defining the zip files containing a git workspace that should be pushed to a GIT repository.
+        All properties allow the use of build templates, e.g. $(DirBuildDeploy)\myarchive-${VersionSemantic}.zip
+    -->
+    <ItemGroup Condition=" '$(ShouldLoadPushToGitRepositorySpecs)' == 'true' ">
+        <!--
+        <PushToGitRepositorySpecs
+            Condition=" '$(DirBuildDeploy)' != '' "
+            Include="$(DirBuildDeploy)\myarchive-${VersionSemantic}.zip">
+            <Repository>$(GitRemoteRepository)</Repository>
+        </PushToGitRepositorySpecs>
+        -->
+    </ItemGroup>
+
+
+    <!--
+        **** DEPLOY STEPS ****
+    -->
+    <!--
+        The following ItemGroup defines which steps are taken during the deploy process. The order of the items in the item group
+        determines in which order the deploy steps are executed.
+
+        Each deploy step can define the following items:
+        - Properties                                     - The semi-colon separated set of properties that should be passed to the script.
+                                                           Properties are written as 'key=value'.
+        - Groups                                         - All the groups that a given step belongs to. The user can elect to only run deploy steps for a given group.
+        - PreSteps                                       - A semi-colon separated list of all additional scripts and their targets that should be executed before
+                                                           the selected deploy step.
+        - PostSteps                                      - A semi-colon separated list of all additional scripts and their targets that should be executed after
+                                                           the selected deploy step.
+
+        The metadata to the script that is about to be executed is passed to each pre-step under the following properties:
+
+        - StepDescription : The full description of the step to be executed.
+        - StepId          : The ID of the step. In general the name of the property that references the step file.
+        - StepName        : The name of the step.
+        - StepPath        : The full path to the script file for the step.
+
+        Additionally all the standard properties as seen below and the properties for the given deploy step are passed in.
+
+        Additional deploy steps can be defined by providing the path to the MsBuild script that should be executed
+        for that step, e.g. adding a deploy step that points to the 'c:\stuff\MyCoolScript.msbuild' will execute
+        that script.
+
+        Any properties defined by the 'Properties' section are pushed up.
+    -->
+    <ItemGroup Condition=" '$(ShouldLoadDeployStepsToExecute)' == 'true' ">
+        <!--
+        <DeployStepsToExecute Include="$(DeployStepsBuildTargetsAssembly)">
+            <Properties>
+            </Properties>
+            <Groups>
+                prepare;
+                prepare.bootstrap;
+            </Groups>
+            <PreSteps>
+            </PreSteps>
+            <PostSteps>
+            </PostSteps>
+        </DeployStepsToExecute>
+        <DeployStepsToExecute Include="$(DeployStepsGenerateTargetsFile)">
+            <Properties>
+            </Properties>
+            <Groups>
+                prepare;
+                prepare.bootstrap;
+            </Groups>
+            <PreSteps>
+            </PreSteps>
+            <PostSteps>
+            </PostSteps>
+        </DeployStepsToExecute>
+        -->
+
+        <DeployStepsToExecute Include="$(DeployStepsRestoreNuGet)">
+            <Properties>
+            </Properties>
+            <Groups>
+                prepare;
+                prepare.restore;
+                prepare.restore.nuget;
+            </Groups>
+            <PreSteps>
+            </PreSteps>
+            <PostSteps>
+            </PostSteps>
+        </DeployStepsToExecute>
+
+        <!--
+            The following steps need to be executed on the original branch (i.e. the branch we are interested in
+            building.
+        -->
+        <DeployStepsToExecute Include="$(DeployStepsPrepareVcsBranch)">
+            <Properties>
+            </Properties>
+            <Groups>
+                prepare;
+                prepare.buildserver;
+                prepare.buildserver.vcssetbranch;
+            </Groups>
+            <PreSteps>
+            </PreSteps>
+            <PostSteps>
+            </PostSteps>
+        </DeployStepsToExecute>
+        <DeployStepsToExecute Include="$(DeployStepsPrepareGetIssueIds)">
+            <Properties>
+            </Properties>
+            <Groups>
+                prepare;
+                prepare.get;
+                prepare.get.issueids;
+            </Groups>
+            <PreSteps>
+            </PreSteps>
+            <PostSteps>
+            </PostSteps>
+        </DeployStepsToExecute>
+
+        <!--
+            All steps from here on may be executed on a different branch than the orginal branch we we started the
+            build on because we might have done some merging / restoring from a different repository.
+        -->
+        <DeployStepsToExecute Include="$(DeployStepsPrepareGetVersion)">
+            <Properties>
+            </Properties>
+            <Groups>
+                prepare;
+                prepare.get;
+                prepare.get.version;
+            </Groups>
+            <PreSteps>
+            </PreSteps>
+            <PostSteps>
+            </PostSteps>
+        </DeployStepsToExecute>
+        <!--
+        <DeployStepsToExecute Include="$(DeployStepsPrepareTagVcs)">
+            <Properties>
+                Configuration=$(ProductionConfiguration);
+                Platform=$(Platform);
+            </Properties>
+            <Groups>
+                prepare;
+                prepare.vcs;
+                prepare.vcs.tag;
+            </Groups>
+            <PreSteps>
+            </PreSteps>
+            <PostSteps>
+            </PostSteps>
+        </DeployStepsToExecute>
+        -->
+
+        <DeployStepsToExecute Include="$(DeployStepsPrepareCopyNuGet)">
+            <Properties>
+            </Properties>
+            <Groups>
+                prepare;
+                prepare.copy;
+                prepare.copy.nuget;
+            </Groups>
+            <PreSteps>
+            </PreSteps>
+            <PostSteps>
+            </PostSteps>
+        </DeployStepsToExecute>
+        <DeployStepsToExecute Include="$(DeployStepsPrepareCopyFiles)">
+            <Properties>
+            </Properties>
+            <Groups>
+                prepare;
+                prepare.copy;
+                prepare.copy.files;
+            </Groups>
+            <PreSteps>
+            </PreSteps>
+            <PostSteps>
+            </PostSteps>
+        </DeployStepsToExecute>
+        <DeployStepsToExecute Include="$(DeployStepsPrepareCopyArchive)">
+            <Properties>
+            </Properties>
+            <Groups>
+                prepare;
+                prepare.copy;
+                prepare.copy.archive;
+            </Groups>
+            <PreSteps>
+            </PreSteps>
+            <PostSteps>
+            </PostSteps>
+        </DeployStepsToExecute>
+
+        <DeployStepsToExecute Include="$(DeployStepsPrepareFileHashes)">
+            <Properties>
+            </Properties>
+            <Groups>
+                prepare;
+                prepare.hash;
+            </Groups>
+            <PreSteps>
+            </PreSteps>
+            <PostSteps>
+            </PostSteps>
+        </DeployStepsToExecute>
+
+        <!--
+        <DeployStepsToExecute Include="$(DeployStepsPushToTags)">
+            <Properties>
+                Configuration=$(ProductionConfiguration);
+                Platform=$(Platform);
+            </Properties>
+            <Groups>
+                deploy;
+                deploy.vcs.tags;
+            </Groups>
+            <PreSteps>
+            </PreSteps>
+            <PostSteps>
+            </PostSteps>
+        </DeployStepsToExecute>
+        -->
+        <DeployStepsToExecute Include="$(DeployStepsPushToNuget)">
+            <Properties>
+                Configuration=$(ProductionConfiguration);
+                Platform=$(Platform);
+            </Properties>
+            <Groups>
+                deploy;
+                deploy.package.nuget;
+            </Groups>
+            <PreSteps>
+            </PreSteps>
+            <PostSteps>
+            </PostSteps>
+        </DeployStepsToExecute>
+        <!--
+        <DeployStepsToExecute Include="$(DeployStepsPushToDirectory)">
+            <Properties>
+                Configuration=$(ProductionConfiguration);
+                Platform=$(Platform);
+            </Properties>
+            <Groups>
+                deploy;
+                deploy.package.directory;
+            </Groups>
+            <PreSteps>
+            </PreSteps>
+            <PostSteps>
+            </PostSteps>
+        </DeployStepsToExecute>
+        <DeployStepsToExecute Include="$(DeployStepsPushToSymbolServer)">
+            <Properties>
+                Configuration=$(ProductionConfiguration);
+                Platform=$(Platform);
+            </Properties>
+            <Groups>
+                deploy;
+                deploy.package.symbols;
+            </Groups>
+            <PreSteps>
+            </PreSteps>
+            <PostSteps>
+            </PostSteps>
+        </DeployStepsToExecute>
+        <DeployStepsToExecute Include="$(DeployStepsPushToGitHubRelease)">
+            <Properties>
+                Configuration=$(ProductionConfiguration);
+                Platform=$(Platform);
+            </Properties>
+            <Groups>
+                deploy;
+                deploy.github;
+            </Groups>
+            <PreSteps>
+            </PreSteps>
+            <PostSteps>
+            </PostSteps>
+        </DeployStepsToExecute>
+        -->
+        <DeployStepsToExecute Include="$(DeployStepsPushToGitBranch)">
+            <Properties>
+                Configuration=$(ProductionConfiguration);
+                Platform=$(Platform);
+            </Properties>
+            <Groups>
+                deploy;
+                deploy.vcs.git.branch;
+            </Groups>
+            <PreSteps>
+            </PreSteps>
+            <PostSteps>
+            </PostSteps>
+        </DeployStepsToExecute>
+        <DeployStepsToExecute Include="$(DeployStepsPushToGitRepository)">
+            <Properties>
+                Configuration=$(ProductionConfiguration);
+                Platform=$(Platform);
+            </Properties>
+            <Groups>
+                deploy;
+                deploy.vcs.git.repository;
+            </Groups>
+            <PreSteps>
+            </PreSteps>
+            <PostSteps>
+            </PostSteps>
+        </DeployStepsToExecute>
+    </ItemGroup>
+
+    <!--
+        Define the scripts that should be executed when any one of the deploy steps fails.
+
+        Steps can be defined by providing the path to the MsBuild script that should be executed
+        for that step, e.g. adding a deploy step that points to the 'c:\stuff\MyCoolScript.msbuild' will execute
+        that script.
+
+        Any properties defined by the 'Properties' section are pushed up.
+    -->
+    <ItemGroup Condition=" '$(ShouldLoadDeployFailureStepsToExecute)' == 'true' ">
+        <!--
+        <DeployFailureStepsToExecute Include="">
+            <Properties>
+            </Properties>
+        </DeployFailureStepsToExecute>
+        -->
+    </ItemGroup>
+
+    <!--
+        The following item group stores metadata describing the custom deploy steps that are executed in the deploy process.
+        By providing this metadata it is possible for pre- and post-step actions to more clearly determine which step
+        they were attached to.
+    -->
+    <ItemGroup Condition=" '$(ShouldLoadAvailableStepMetadata)' == 'true' ">
+        <!--
+        <AvailableStepMetadata Include="$([System.IO.Path]::GetFileName('$(DirWorkspace)\my.deploy.step.msbuild'))">
+            <Description>
+                The description for my cool deploy step
+            </Description>
+            <Id></Id>
+            <Name>My deploy step</Name>
+            <Path>$(DirWorkspace)\my.deploy.step.msbuild</Path>
+        </AvailableStepMetadata>
+        -->
+    </ItemGroup>
+
+
+
+
+
+
+    <!--
+        *****************************************
+        *                                       *
+        *   TOOLS-OPS SPECIFIC SETTINGS    *
+        *                                       *
+        *****************************************
+    -->
+
+    <PropertyGroup>
+        <OpsConfigurationVersion>0.3</OpsConfigurationVersion>
+    </PropertyGroup>
+</Project>

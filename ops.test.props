@@ -1,0 +1,514 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="14.0"
+         DefaultTargets="Run"
+         xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <!--
+        **** PREPARE - WORKSPACE ****
+    -->
+    <!--
+        The list of all files that should be deleted prior to starting the test process.
+
+        If the deletion process fails the test will continue and a warning will be printed.
+    -->
+    <ItemGroup Condition=" '$(ShouldLoadFilesToDelete)' == 'true' ">
+        <!--
+        <FilesToDelete Include="" />
+        -->
+    </ItemGroup>
+
+    <!--
+        The list of all directories that should be deleted prior to starting the test process.
+        Deleting the directories will also delete all the files contained in these directories.
+
+        If the deletion process fails the test will continue and a warning will be printed.
+    -->
+    <ItemGroup Condition=" '$(ShouldLoadDirectoriesToDelete)' == 'true' ">
+        <!--
+        <DirectoriesToDelete Include="" />
+        -->
+    </ItemGroup>
+
+
+    <!--
+        **** PREPARE - CALCULATE HASHES ****
+    -->
+    <!--
+        The collection of files for which the hashes need to be calculated. The available hash algorithms
+        are:
+
+        - MD5
+        - SHA1
+        - SHA256
+        - SHA512
+
+        Hash values are stored in a file in the temp directory and can be retrieved with the
+        'ReadHashFromFile' task
+    -->
+    <ItemGroup Condition=" '$(ShouldLoadFilesToHash)' == 'true' ">
+        <!-->
+        <FilesToHash Include="">
+            <Algorithm></Algorithm>
+        </FilesToHash>
+        -->
+    </ItemGroup>
+
+
+    <!--
+        **** PREPARE - COPY FILES ****
+    -->
+    <!--
+        Files that should be copied, either from the file system or from a NuGet package.
+    -->
+    <ItemGroup Condition=" '$(ShouldLoadNuGetFilesToCopy)' == 'true' ">
+        <!--
+        <NuGetFilesToCopy Include="My.Cool.NuGet.Package">
+            <Include>**/*.*</Include>
+            <Destinations>$(DirBuildTemp)</Destinations>
+        </NuGetFilesToCopy>
+        -->
+    </ItemGroup>
+    <ItemGroup Condition=" '$(ShouldLoadHttpFilesToCopy)' == 'true' ">
+        <!-- If the archive file with the exported VM does not exist in the deploy directory then download it from the archive server and unzip it -->
+        <HttpFilesToCopy
+            Condition=" '$(IsTest)' == 'true' AND !Exists('$(DirBuildDeploy)') "
+            Include="$(ArtefactRepositoryToPullFrom)/${ProductNameInFilePath}/${VersionSemantic}/${ProductName}-${VersionSemantic}.zip">
+            <Destination>$(DirBuildTemp)\$(ImageName)</Destination>
+            <UseDefaultCredentials>false</UseDefaultCredentials>
+            <Unzip>true</Unzip>
+        </HttpFilesToCopy>
+    </ItemGroup>
+    <ItemGroup Condition=" '$(ShouldLoadFilesToCopy)' == 'true' ">
+        <FilesToCopy
+            Condition=" '$(IsTest)' == 'true' "
+            Exclude="$(DirTestsIntegrationPester)\System.Tests.ps1;$(DirTestsIntegrationPester)\Users.Tests.ps1"
+            Include="$(DirTestsIntegrationPester)\**\*.*">
+            <Destination>$(DirBuildTempTestsIntegrationPester)</Destination>
+        </FilesToCopy>
+    </ItemGroup>
+    <ItemGroup Condition=" '$(ShouldLoadArchiveFilesToCopy)' == 'true' ">
+        <!-- If the archive file with the exported VM exists in the deploy directory unzip it from there -->
+        <ArchiveFilesToCopy
+            Condition=" '$(IsTest)' == 'true' AND Exists('$(DirBuildDeploy)') "
+            Include="$(DirBuildDeploy)\${ProductName}-${VersionSemantic}.zip">
+            <Destination>$(DirBuildTemp)\${ImageName}</Destination>
+        </ArchiveFilesToCopy>
+    </ItemGroup>
+
+
+    <!--
+        **** PREPARE - GENERATE FILES ****
+    -->
+    <!--
+        The list of all files that should be generated and their template files.
+
+        The template file may contain zero or more template parameters as indicated at the top of this
+        file. By default template parameters must be enclosed in '${}'. By providing a value for
+        'Expression' it is possible to use a custom regular expression to search for elements to replace,
+        e.g. $TOKEN$. Note that elements in the regular expession might need to be converted in a suitable
+        format because XML doesn't like < and > and MsBuild doesn't like $ (%24), * (%2A), ? (%3F).
+
+        Only the 'Template' value is required.
+
+        Additional parameters can be provided through the 'TemplateTokens' ItemGroup below.
+    -->
+    <ItemGroup Condition=" '$(ShouldLoadTestFilesToGenerate)' == 'true' ">
+        <TestFilesToGenerate Include="$(DirBuildTempTestsIntegrationPacker)\packer.json">
+            <Template>$(DirTestsIntegrationPacker)\packer.json</Template>
+            <Encoding></Encoding>
+        </TestFilesToGenerate>
+        <TestFilesToGenerate Include="$(DirBuildTempTestsIntegrationPacker)\packer_variables.json">
+            <Template>$(DirTestsIntegrationPacker)\packer_variables.json</Template>
+            <Encoding></Encoding>
+        </TestFilesToGenerate>
+
+        <TestFilesToGenerate Include="$(DirBuildTempTestsIntegrationPester)\System.Tests.ps1">
+            <Template>$(DirTestsIntegrationPester)\System.Tests.ps1</Template>
+            <Encoding></Encoding>
+        </TestFilesToGenerate>
+        <TestFilesToGenerate Include="$(DirBuildTempTestsIntegrationPester)\Users.Tests.ps1">
+            <Template>$(DirTestsIntegrationPester)\Users.Tests.ps1</Template>
+            <Encoding></Encoding>
+        </TestFilesToGenerate>
+    </ItemGroup>
+
+
+    <!--
+        **** INTEGRATION - PESTER ****
+    -->
+    <PropertyGroup>
+        <!--
+            The full path to the file into which Pester will write the test results.
+        -->
+        <!-- <FileTestReport>$(DirBuildLogs)\pester.integration.xml</FileTestReport> -->
+    </PropertyGroup>
+    <!--
+        The list of all arguments that should be passed to the Pester test.
+
+        The value elements may contain zero or more template parameters as indicated at the top of this
+        file. Template parameters must be enclosed in '${}'.
+    -->
+    <ItemGroup Condition=" '$(ShouldLoadPesterTestArguments)' == 'true' ">
+        <!--
+        <PesterTestArguments Include="">
+            <Value></Value>
+        </PesterTestArguments>
+        -->
+    </ItemGroup>
+
+
+    <!--
+        **** PACK - ISO ****
+    -->
+    <!--
+        The item group defining the location and contents of the ISO files that are generated during the build
+        All file paths allow build templates, e.g. $(DirBuildDeploy)\myarchive-${VersionSemantic}.zip.
+    -->
+    <ItemGroup Condition=" '$(ShouldLoadIsoPackageSpecs)' == 'true' ">
+        <IsoPackageSpecs
+            Condition=" '$(IsTest)' == 'true' "
+            Include="$(DirTests)\**\*.isospec" />
+    </ItemGroup>
+
+
+    <!--
+        **** INTEGRATION - PACKER ****
+    -->
+    <!--
+        The item group defining the location and contents of the Packer files that are used during the test
+        to validate the Packer images.
+
+        All file paths allow build templates, e.g. $(DirBuildDeploy)\myarchive-${VersionSemantic}.zip.
+    -->
+    <ItemGroup Condition=" '$(ShouldLoadPackerImagesToTest)' == 'true' ">
+        <PackerImagesToTest
+            Condition=" '$(DirTestsIntegrationPacker)' != '' AND '$(IsTest)' == 'true'  "
+            Include="$(DirTestsIntegrationPacker)\packer.json">
+            <Variables>
+                $(DirBuildTempTestsIntegrationPacker)\packer_variables.json
+            </Variables>
+        </PackerImagesToTest>
+    </ItemGroup>
+
+
+    <!--
+        **** TEST STEPS ****
+    -->
+    <!--
+        The following ItemGroup defines which steps are taken during the test process. The order of the items in the item group
+        determines in which order the test steps are executed.
+
+        Each test step can define the following items:
+        - Properties                                     - The semi-colon separated set of properties that should be passed to the script.
+                                                           Properties are written as 'key=value'.
+        - Groups                                         - All the groups that a given step belongs to. The user can elect to only run test steps for a given group.
+        - PreSteps                                       - A semi-colon separated list of all additional scripts and their targets that should be executed before
+                                                           the selected test step.
+        - PostSteps                                      - A semi-colon separated list of all additional scripts and their targets that should be executed after
+                                                           the selected test step.
+
+        The metadata to the script that is about to be executed is passed to each pre-step under the following properties:
+
+        - StepDescription : The full description of the step to be executed.
+        - StepId          : The ID of the step. In general the name of the property that references the step file.
+        - StepName        : The name of the step.
+        - StepPath        : The full path to the script file for the step.
+
+        Additionally all the standard properties as seen below and the properties for the given test step are passed in.
+
+        The following ItemGroup defines which steps are taken during the test process. The order of the items in the item group
+        determines in which order the test steps are executed.
+
+        Additional test steps can be defined by providing the path to the MsBuild script that should be executed
+        for that step, e.g. adding a test step that points to the 'c:\stuff\MyCoolScript.msbuild' will execute
+        that script.
+
+        Any properties defined by the 'Properties' section are pushed up.
+    -->
+    <ItemGroup Condition=" '$(ShouldLoadTestStepsToExecute)' == 'true' ">
+        <TestStepsToExecute Include="$(TestStepsPrepareWorkspace)">
+            <Properties>
+            </Properties>
+            <Groups>
+                clean;
+                prepare;
+                prepare.clean;
+            </Groups>
+            <PreSteps>
+            </PreSteps>
+            <PostSteps>
+            </PostSteps>
+        </TestStepsToExecute>
+
+        <!--
+        <TestStepsToExecute Include="$(TestStepsBuildTargetsAssembly)">
+            <Properties>
+            </Properties>
+            <Groups>
+                prepare;
+                prepare.bootstrap;
+            </Groups>
+            <PreSteps>
+            </PreSteps>
+            <PostSteps>
+            </PostSteps>
+        </TestStepsToExecute>
+        <TestStepsToExecute Include="$(TestStepsGenerateTargetsFile)">
+            <Properties>
+            </Properties>
+            <Groups>
+                prepare;
+                prepare.bootstrap;
+            </Groups>
+            <PreSteps>
+            </PreSteps>
+            <PostSteps>
+            </PostSteps>
+        </TestStepsToExecute>
+        -->
+
+        <TestStepsToExecute Include="$(TestStepsPrepareRestoreNuGet)">
+            <Properties>
+            </Properties>
+            <Groups>
+                prepare;
+                prepare.restore;
+                prepare.restore.nuget;
+            </Groups>
+            <PreSteps>
+            </PreSteps>
+            <PostSteps>
+            </PostSteps>
+        </TestStepsToExecute>
+
+        <!--
+            The following steps need to be executed on the original branch (i.e. the branch we are interested in
+            building.
+        -->
+        <TestStepsToExecute Include="$(TestStepsPrepareVcsBranch)">
+            <Properties>
+            </Properties>
+            <Groups>
+                prepare;
+                prepare.buildserver;
+                prepare.buildserver.vcssetbranch;
+            </Groups>
+            <PreSteps>
+            </PreSteps>
+            <PostSteps>
+            </PostSteps>
+        </TestStepsToExecute>
+        <TestStepsToExecute Include="$(TestStepsPrepareVcsInfo)">
+            <Properties>
+            </Properties>
+            <Groups>
+                prepare;
+                prepare.get;
+                prepare.get.vcsinfo;
+            </Groups>
+            <PreSteps>
+            </PreSteps>
+            <PostSteps>
+            </PostSteps>
+        </TestStepsToExecute>
+        <TestStepsToExecute Include="$(TestStepsPrepareGetIssueIds)">
+            <Properties>
+            </Properties>
+            <Groups>
+                prepare;
+                prepare.get;
+                prepare.get.issueids;
+            </Groups>
+            <PreSteps>
+            </PreSteps>
+            <PostSteps>
+            </PostSteps>
+        </TestStepsToExecute>
+
+        <TestStepsToExecute Include="$(TestStepsPrepareGetVersion)">
+            <Properties>
+            </Properties>
+            <Groups>
+                prepare;
+                prepare.get;
+                prepare.get.version;
+            </Groups>
+            <PreSteps>
+            </PreSteps>
+            <PostSteps>
+            </PostSteps>
+        </TestStepsToExecute>
+        <TestStepsToExecute Include="$(TestStepsPrepareReleaseNotes)">
+            <Properties>
+            </Properties>
+            <Groups>
+                prepare;
+                prepare.get;
+                prepare.get.releasenotes;
+            </Groups>
+            <PreSteps>
+            </PreSteps>
+            <PostSteps>
+            </PostSteps>
+        </TestStepsToExecute>
+        <TestStepsToExecute Include="$(TestStepsPrepareCopyNuGet)">
+            <Properties>
+            </Properties>
+            <Groups>
+                prepare;
+                prepare.copy;
+                prepare.copy.nuget;
+            </Groups>
+            <PreSteps>
+            </PreSteps>
+            <PostSteps>
+            </PostSteps>
+        </TestStepsToExecute>
+        <TestStepsToExecute Include="$(TestStepsPrepareCopyFiles)">
+            <Properties>
+            </Properties>
+            <Groups>
+                prepare;
+                prepare.copy;
+                prepare.copy.files;
+            </Groups>
+            <PreSteps>
+            </PreSteps>
+            <PostSteps>
+            </PostSteps>
+        </TestStepsToExecute>
+        <TestStepsToExecute Include="$(TestStepsPrepareCopyArchive)">
+            <Properties>
+            </Properties>
+            <Groups>
+                prepare;
+                prepare.copy;
+                prepare.copy.archive;
+            </Groups>
+            <PreSteps>
+            </PreSteps>
+            <PostSteps>
+            </PostSteps>
+        </TestStepsToExecute>
+        <TestStepsToExecute Include="$(TestStepsPrepareFileHashes)">
+            <Properties>
+            </Properties>
+            <Groups>
+                prepare;
+                prepare.hash;
+            </Groups>
+            <PreSteps>
+            </PreSteps>
+            <PostSteps>
+            </PostSteps>
+        </TestStepsToExecute>
+
+        <TestStepsToExecute Include="$(TestStepsPrepareGenerateFiles)">
+            <Properties>
+            </Properties>
+            <Groups>
+                prepare;
+                prepare.generate;
+                prepare.generate.files;
+            </Groups>
+            <PreSteps>
+            </PreSteps>
+            <PostSteps>
+            </PostSteps>
+        </TestStepsToExecute>
+        <!--
+        <TestStepsToExecute Include="$(TestStepsIntegrationPester)">
+            <Properties>
+            </Properties>
+            <Groups>
+                test;
+                test.pester;
+                test.pester.integration;
+            </Groups>
+            <PreSteps>
+            </PreSteps>
+            <PostSteps>
+            </PostSteps>
+        </TestStepsToExecute>
+        -->
+        <TestStepsToExecute Include="$(TestStepsPackIso)">
+            <Properties>
+                Configuration=$(ProductionConfiguration);
+                Platform=$(Platform)
+            </Properties>
+            <Groups>
+                test;
+                test.iso;
+                test.iso.integration;
+            </Groups>
+            <PreSteps>
+            </PreSteps>
+            <PostSteps>
+            </PostSteps>
+        </TestStepsToExecute>
+        <TestStepsToExecute Include="$(TestStepsIntegrationPacker)">
+            <Properties>
+            </Properties>
+            <Groups>
+                test;
+                test.packer;
+                test.packer.integration;
+            </Groups>
+            <PreSteps>
+            </PreSteps>
+            <PostSteps>
+            </PostSteps>
+        </TestStepsToExecute>
+    </ItemGroup>
+
+    <!--
+        Define the scripts that should be executed when any one of the test steps fails.
+
+        Steps can be defined by providing the path to the MsBuild script that should be executed
+        for that step, e.g. adding a test step that points to the 'c:\stuff\MyCoolScript.msbuild' will execute
+        that script.
+
+        Any properties defined by the 'Properties' section are pushed up.
+    -->
+    <ItemGroup Condition=" '$(ShouldLoadTestFailureStepsToExecute)' == 'true' ">
+        <!--
+        <TestFailureStepsToExecute Include="">
+            <Properties>
+            </Properties>
+        </TestFailureStepsToExecute>
+        -->
+    </ItemGroup>
+
+    <!--
+        The following item group stores metadata describing the custom test steps that are executed in the test process.
+        By providing this metadata it is possible for pre- and post-step actions to more clearly determine which step
+        they were attached to.
+    -->
+    <ItemGroup Condition=" '$(ShouldLoadAvailableStepMetadata)' == 'true' ">
+        <!--
+        <AvailableStepMetadata Include="$([System.IO.Path]::GetFileName('$(DirWorkspace)\my.test.step.msbuild'))">
+            <Description>
+                The description for my cool test step
+            </Description>
+            <Id></Id>
+            <Name>My test step</Name>
+            <Path>$(DirWorkspace)\my.test.step.msbuild</Path>
+        </AvailableStepMetadata>
+        -->
+    </ItemGroup>
+
+
+
+
+
+    <!--
+        *****************************************
+        *                                       *
+        *   TOOLS-OPS SPECIFIC SETTINGS    *
+        *                                       *
+        *****************************************
+    -->
+
+    <PropertyGroup>
+        <OpsConfigurationVersion>0.3</OpsConfigurationVersion>
+    </PropertyGroup>
+</Project>
