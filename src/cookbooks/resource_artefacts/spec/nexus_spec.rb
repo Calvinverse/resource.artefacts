@@ -207,6 +207,14 @@ describe 'resource_artefacts::nexus' do
         content: "repository.createNpmProxy('npmjs.org','https://www.npmjs.org/', 'npm_mirror', true)"
       )
     end
+
+    it 'enables the npm bearer token realm' do
+      expect(chef_run).to run_nexus3_api('npm-bearer-token').with(
+        content: 'import org.sonatype.nexus.security.realm.RealmManager;' \
+        'realmManager = container.lookup(RealmManager.class.getName());' \
+        "realmManager.enableRealm('NpmToken', true);"
+      )
+    end
   end
 
   context 'creates nuget repositories' do

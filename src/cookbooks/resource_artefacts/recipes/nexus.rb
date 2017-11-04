@@ -202,6 +202,14 @@ nexus3_api 'npm-mirror' do
   action %i[create run delete]
 end
 
+# enable the NPM Bearer Token realm
+nexus3_api 'npm-bearer-token' do
+  content 'import org.sonatype.nexus.security.realm.RealmManager;' \
+  'realmManager = container.lookup(RealmManager.class.getName());' \
+  "realmManager.enableRealm('NpmToken', true);"
+  action %i[create run delete]
+end
+
 #
 # ADD THE NUGET REPOSITORIES
 #
