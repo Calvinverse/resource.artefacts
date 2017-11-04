@@ -125,9 +125,46 @@ describe 'resource_artefacts::nexus' do
       )
     end
 
+    groovy_docker_mirror_content = <<~GROOVY
+      import org.sonatype.nexus.repository.config.Configuration;
+      configuration = new Configuration(
+          repositoryName: 'hub.docker.io',
+          recipeName: 'docker-proxy',
+          online: true,
+          attributes: [
+              docker: [
+                  forceBasicAuth: false,
+                  httpPort: 5020,
+                  httpsPort: 5021,
+                  v1Enabled: true
+              ],
+              proxy: [
+                  remoteUrl: 'https://registry-1.docker.io'
+              ],
+              dockerProxy: [
+                  indexType: 'HUB'
+              ],
+              storage: [
+                  writePolicy: 'ALLOW_ONCE',
+                  blobStoreName: 'docker_mirror',
+                  strictContentTypeValidation: true
+              ]
+          ]
+      );
+
+      repository.getRepositoryManager().create(configuration);
+    GROOVY
     it 'creates a repository for mirror docker images' do
       expect(chef_run).to run_nexus3_api('docker-mirror').with(
-        content: "repository.createDockerProxy('hub.docker.io','https://registry-1.docker.io', 'HUB', '', 5020, 5021, 'docker_mirror', true, true)"
+        content: groovy_docker_mirror_content
+      )
+    end
+
+    it 'enables the docker bearer token realm' do
+      expect(chef_run).to run_nexus3_api('docker-bearer-token').with(
+        content: 'import org.sonatype.nexus.security.realm.RealmManager;' \
+        'realmManager = container.lookup(RealmManager.class.getName());' \
+        "realmManager.enableRealm('DockerToken', true);"
       )
     end
   end

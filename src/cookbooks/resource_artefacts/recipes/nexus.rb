@@ -119,14 +119,50 @@ nexus3_api 'docker-mirror-blob' do
   action %i[create run delete]
 end
 
+# Set the docker-mirror to allow anonymous access, otherwise it won't mirror: https://issues.sonatype.org/browse/NEXUS-10813
 port_http_docker_mirror = node['nexus3']['repository']['docker']['port']['http']['mirror']
 port_https_docker_mirror = node['nexus3']['repository']['docker']['port']['https']['mirror']
+groovy_docker_mirror_content = <<~GROOVY
+  import org.sonatype.nexus.repository.config.Configuration;
+  configuration = new Configuration(
+      repositoryName: 'hub.docker.io',
+      recipeName: 'docker-proxy',
+      online: true,
+      attributes: [
+          docker: [
+              forceBasicAuth: false,
+              httpPort: #{port_http_docker_mirror},
+              httpsPort: #{port_https_docker_mirror},
+              v1Enabled: true
+          ],
+          proxy: [
+              remoteUrl: 'https://registry-1.docker.io'
+          ],
+          dockerProxy: [
+              indexType: 'HUB'
+          ],
+          storage: [
+              writePolicy: 'ALLOW_ONCE',
+              blobStoreName: '#{blob_name_docker_mirror}',
+              strictContentTypeValidation: true
+          ]
+      ]
+  );
+
+  repository.getRepositoryManager().create(configuration);
+GROOVY
 nexus3_api 'docker-mirror' do
-  content "repository.createDockerProxy('hub.docker.io','https://registry-1.docker.io', 'HUB', '', #{port_http_docker_mirror}, #{port_https_docker_mirror}, '#{blob_name_docker_mirror}', true, true)"
+  content groovy_docker_mirror_content
   action %i[create run delete]
 end
 
-# Set the docker-mirror to allow anonymous access, otherwise it won't mirror: https://issues.sonatype.org/browse/NEXUS-10813
+# enable the Docker Bearer Token realm
+nexus3_api 'docker-bearer-token' do
+  content 'import org.sonatype.nexus.security.realm.RealmManager;' \
+  'realmManager = container.lookup(RealmManager.class.getName());' \
+  "realmManager.enableRealm('DockerToken', true);"
+  action %i[create run delete]
+end
 
 #
 # ADD THE NPM REPOSITORIES
