@@ -6,6 +6,7 @@
         "dir_cookbooks_src": "src/cookbooks",
         "dir_cookbooks_vendors": "packages/vendor/cookbooks",
         "dir_http_user": null,
+        "dir_log": null,
         "dir_temp": null,
         "dir_vm_import": null,
 
@@ -194,6 +195,12 @@
                 "resource_artefacts::default"
             ],
             "type": "chef-solo"
+        },
+        {
+            "type": "file",
+            "source": "/home/nexus/log/nexus.log",
+            "destination": "{{ user `dir_log` }}/nexus.log",
+            "direction" : "download"
         }
     ]
 }
