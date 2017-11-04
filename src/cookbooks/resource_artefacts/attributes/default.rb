@@ -79,11 +79,15 @@ default['nexus3']['checksum'] = '40B95B097B43CC8941A9700D24BAF25EF94867286E43EAF
 default['nexus3']['path'] = '/opt'
 default['nexus3']['data'] = '/home/nexus'
 default['nexus3']['home'] = '/opt/nexus'
+default['nexus3']['port'] = 8081
+default['nexus3']['proxy_path'] = '/artefacts'
 
-default['nexus3']['repository']['docker']['port']['http']['hosted'] = 5000
-default['nexus3']['repository']['docker']['port']['https']['hosted'] = 5001
-default['nexus3']['repository']['docker']['port']['http']['mirror'] = 5010
-default['nexus3']['repository']['docker']['port']['https']['mirror'] = 5011
+default['nexus3']['repository']['docker']['port']['http']['production'] = 5000
+default['nexus3']['repository']['docker']['port']['https']['production'] = 5001
+default['nexus3']['repository']['docker']['port']['http']['qa'] = 5010
+default['nexus3']['repository']['docker']['port']['https']['qa'] = 5011
+default['nexus3']['repository']['docker']['port']['http']['mirror'] = 5020
+default['nexus3']['repository']['docker']['port']['https']['mirror'] = 5021
 
 default['nexus']['service_group'] = 'nexus'
 default['nexus']['service_user'] = 'nexus'

@@ -551,6 +551,9 @@
         <TemplateTokens Include="DirDeployJsonEscaped">
             <ReplacementValue>$(DirBuildDeploy.Replace('\', '/'))</ReplacementValue>
         </TemplateTokens>
+        <TemplateTokens Include="DirLogsJsonEscaped">
+            <ReplacementValue>$(DirBuildLogs.Replace('\', '/'))</ReplacementValue>
+        </TemplateTokens>
         <TemplateTokens Include="DirTempJsonEscaped">
             <ReplacementValue>$(DirBuildTemp.Replace('\', '/'))</ReplacementValue>
         </TemplateTokens>
