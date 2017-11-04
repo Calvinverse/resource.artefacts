@@ -269,6 +269,18 @@ describe 'resource_artefacts::nexus' do
     end
   end
 
+  context 'creates the LDAP realm' do
+    let(:chef_run) { ChefSpec::SoloRunner.converge(described_recipe) }
+
+    it 'enables the ldap realm' do
+      expect(chef_run).to run_nexus3_api('ldap-realm').with(
+        content: 'import org.sonatype.nexus.security.realm.RealmManager;' \
+        'realmManager = container.lookup(RealmManager.class.getName());' \
+        "realmManager.enableRealm('LdapRealm', true);"
+      )
+    end
+  end
+
   context 'configures the firewall for nexus' do
     let(:chef_run) { ChefSpec::SoloRunner.converge(described_recipe) }
 

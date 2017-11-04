@@ -263,6 +263,17 @@ nexus3_api 'gems-mirror' do
 end
 
 #
+# ENABLE LDAP TOKEN REALM
+#
+
+nexus3_api 'ldap-realm' do
+  content 'import org.sonatype.nexus.security.realm.RealmManager;' \
+  'realmManager = container.lookup(RealmManager.class.getName());' \
+  "realmManager.enableRealm('LdapRealm', true);"
+  action %i[create run delete]
+end
+
+#
 # ALLOW NEXUS THROUGH THE FIREWALL
 #
 
