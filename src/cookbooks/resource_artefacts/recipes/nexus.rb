@@ -238,6 +238,14 @@ nexus3_api 'nuget-mirror' do
   action %i[create run delete]
 end
 
+# enable the NuGet API-key realm
+nexus3_api 'nuget-api-key' do
+  content 'import org.sonatype.nexus.security.realm.RealmManager;' \
+  'realmManager = container.lookup(RealmManager.class.getName());' \
+  "realmManager.enableRealm('NuGetApiKey', true);"
+  action %i[create run delete]
+end
+
 #
 # ADD THE RUBY GEM REPOSITORIES
 #

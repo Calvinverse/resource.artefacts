@@ -243,6 +243,14 @@ describe 'resource_artefacts::nexus' do
         content: "repository.createNugetProxy('nuget.org','https://www.nuget.org/api/v2/', 'nuget_mirror', true)"
       )
     end
+
+    it 'enables the nuget api key realm' do
+      expect(chef_run).to run_nexus3_api('nuget-api-key').with(
+        content: 'import org.sonatype.nexus.security.realm.RealmManager;' \
+        'realmManager = container.lookup(RealmManager.class.getName());' \
+        "realmManager.enableRealm('NuGetApiKey', true);"
+      )
+    end
   end
 
   context 'creates ruby gems repositories' do
