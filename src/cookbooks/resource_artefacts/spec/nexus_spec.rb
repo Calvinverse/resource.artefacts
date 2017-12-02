@@ -681,7 +681,7 @@ describe 'resource_artefacts::nexus' do
       expect(chef_run).to run_nexus3_api('role-docker-pull').with(
         content: "security.addRole('nx-infrastructure-container-pull', 'nx-infrastructure-container-pull'," \
         " 'User with privileges to allow pulling containers from the different container repositories'," \
-        " ['nx-repository-view-docker-production-browse', 'nx-repository-view-docker-production-read'], [''])"
+        " ['nx-repository-view-docker-docker-production-browse', 'nx-repository-view-docker-docker-production-read'], [''])"
       )
     end
 
