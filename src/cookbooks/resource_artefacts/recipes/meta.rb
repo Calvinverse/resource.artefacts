@@ -8,10 +8,12 @@
 #
 
 resource_name = node['resource']['name']
+resource_short_name = node['resource']['name_short']
 ruby_block 'set_environment_product_name' do
   block do
     file = Chef::Util::FileEdit.new('/etc/environment')
     file.insert_line_if_no_match("RESOURCE_NAME=#{resource_name}", "RESOURCE_NAME=#{resource_name}")
+    file.insert_line_if_no_match("RESOURCE_SHORT_NAME=#{resource_short_name}", "RESOURCE_SHORT_NAME=#{resource_short_name}")
     file.write_file
   end
 end

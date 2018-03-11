@@ -1,8 +1,11 @@
 # frozen_string_literal: true
 
 #
+# CONSULTEMPLATE
 #
 
+default['consul_template']['config_path'] = '/etc/consul-template.d/conf'
+default['consul_template']['template_path'] = '/etc/consul-template.d/templates'
 
 #
 # FIREWALL
@@ -51,5 +54,7 @@ default['nexus']['service_group'] = 'nexus'
 default['nexus']['service_user'] = 'nexus'
 
 #
+# TELEGRAF
 #
 
+default['telegraf']['config_directory'] = '/etc/telegraf/telegraf.d'
