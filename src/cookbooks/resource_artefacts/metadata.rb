@@ -14,6 +14,6 @@ version '${VersionSemantic}'
 supports 'ubuntu', '>= 16.04'
 
 depends 'firewall', '= 2.6.2'
-depends 'java_se', '= 8.152.0'
+depends 'java_se', '= 8.162.0'
 depends 'nexus3', '= 2.1.1'
 depends 'systemd', '= 2.1.3'
