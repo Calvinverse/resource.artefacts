@@ -1,29 +1,7 @@
 Describe 'On the system' {
     Context 'the machine name' {
-        It 'should be a generated name with containing the version number and random characters' {
-            hostname | Should Match '^(cvartefacts.*)-\d{1,2}-\d{1,3}-\d{1,3}-.{16}$'
-        }
-    }
-
-    Context 'the environment variables' {
-        It 'should have a product name environment variable' {
-            $env:RESOURCE_NAME | Should Be '${ProductName}'
-        }
-
-        It 'should have an environment variable for the major version' {
-            $env:RESOURCE_VERSION_MAJOR | Should Be '${VersionMajor}'
-        }
-
-        It 'should have an environment variable for the minor version' {
-            $env:RESOURCE_VERSION_MINOR | Should Be '${VersionMinor}'
-        }
-
-        It 'should have an environment variable for the patch version' {
-            $env:RESOURCE_VERSION_PATCH | Should Be '${VersionPatch}'
-        }
-
-        It 'should have an environment variable for the semantic version' {
-            $env:RESOURCE_VERSION_SEMANTIC | Should Be '${VersionSemantic}'
+        It 'should not be the test name' {
+            hostname | Should Not Be '${ImageNameWithoutSpaces}'
         }
     }
 
@@ -35,7 +13,7 @@ Describe 'On the system' {
 
     Context 'the administrator rights' {
         It 'should have default sudo settings' {
-            (Get-FileHash -Path /etc/sudoers -Algorithm SHA256).Hash | Should Be 'CC61F3AA6C9AF8F9540435AC280D6AD1AD0A734FDCAC6D855527F9944ABB67A3'
+            (Get-FileHash -Path /etc/sudoers -Algorithm SHA256).Hash | Should Be '1DA6E2BCBBA35669C9EB62370C88F4017686309C9AC4E6458D963321EAD42439'
         }
 
         It 'should not have additional sudo files' {
@@ -71,10 +49,10 @@ Describe 'On the system' {
         )
 
         It 'should have a file with updates' {
-            '/tmp/updates.txt' | Should Exist
+            '/test/updates.txt' | Should Exist
         }
 
-        $fileSize = (Get-Item '/tmp/updates.txt').Length
+        $fileSize = (Get-Item '/test/updates.txt').Length
         if ($fileSize -gt 0)
         {
             $updates = Get-Content /tmp/updates.txt
@@ -83,6 +61,26 @@ Describe 'On the system' {
             It 'should all be installed' {
                 $additionalPackages.Length | Should Be 0
             }
+        }
+
+        $systemctlOutput = & systemctl status apt-daily.service
+        It 'has disable the apt-daily service' {
+            $systemctlOutput | Should Not Be $null
+            $systemctlOutput.GetType().FullName | Should Be 'System.Object[]'
+            $systemctlOutput.Length | Should BeGreaterThan 3
+            $systemctlOutput[0] | Should Match 'apt-daily.service - Daily apt download activities'
+            $systemctlOutput[1] | Should Match 'Loaded:\sloaded\s\(.*;\sstatic;.*\)'
+            $systemctlOutput[2] | Should Match 'Active:\sinactive\s\(dead\).*'
+        }
+
+        $systemctlOutput = & systemctl status apt-daily.timer
+        It 'has disable the apt-daily timer' {
+            $systemctlOutput | Should Not Be $null
+            $systemctlOutput.GetType().FullName | Should Be 'System.Object[]'
+            $systemctlOutput.Length | Should Be 3
+            $systemctlOutput[0] | Should Match 'apt-daily.timer - Daily apt download activities'
+            $systemctlOutput[1] | Should Match 'Loaded:\sloaded\s\(.*;\sdisabled;.*\)'
+            $systemctlOutput[2] | Should Match 'Active:\sinactive\s\(dead\).*'
         }
     }
 }
