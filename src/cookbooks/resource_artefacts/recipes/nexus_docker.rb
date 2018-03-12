@@ -211,7 +211,9 @@ end
 # CONNECT TO CONSUL
 #
 
-file '/etc/consul/conf.d/nexus-docker-production-read.json' do
+nexus_management_port = node['nexus3']['port']
+nexus_proxy_path = node['nexus3']['proxy_path']
+file '/etc/consul/conf.d/nexus-docker-production-read.json' do # ~FC005
   action :create
   content <<~JSON
     {

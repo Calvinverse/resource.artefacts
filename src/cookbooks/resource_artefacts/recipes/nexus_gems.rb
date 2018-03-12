@@ -11,7 +11,6 @@
 # CONFIGURE THE FILE SYSTEM
 #
 
-store_path = node['nexus3']['blob_store_path']
 scratch_blob_store_path = node['nexus3']['scratch_blob_store_path']
 
 #
@@ -34,6 +33,8 @@ end
 # CONNECT TO CONSUL
 #
 
+nexus_management_port = node['nexus3']['port']
+nexus_proxy_path = node['nexus3']['proxy_path']
 file '/etc/consul/conf.d/nexus-gems-mirror.json' do
   action :create
   content <<~JSON

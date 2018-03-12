@@ -76,64 +76,39 @@ end
 # CONNECT TO CONSUL
 #
 
-file '/etc/consul/conf.d/nexus-nuget-production-read.json' do
-  action :create
-  content <<~JSON
-    {
-      "services": [
-        {
-          "checks": [
-            {
-              "header": { "Authorization" : ["Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo"]},
-              "http": "http://localhost:#{nexus_management_port}#{nexus_proxy_path}/service/metrics/ping",
-              "id": "nexus_nuget_production_read_api_ping",
-              "interval": "15s",
-              "method": "GET",
-              "name": "Nexus NuGet Production read repository ping",
-              "timeout": "5s"
-            }
-          ],
-          "enableTagOverride": false,
-          "id": "nexus_nuget_production_read_api",
-          "name": "artefacts",
-          "port": #{nexus_management_port},
-          "tags": [
-            "read-production-nuget"
-          ]
-        }
-      ]
-    }
-  JSON
-end
+nexus_management_port = node['nexus3']['port']
+nexus_proxy_path = node['nexus3']['proxy_path']
 
-file '/etc/consul/conf.d/nexus-nuget-production-write.json' do
-  action :create
-  content <<~JSON
-    {
-      "services": [
-        {
-          "checks": [
-            {
-              "header": { "Authorization" : ["Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo"]},
-              "http": "http://localhost:#{nexus_management_port}#{nexus_proxy_path}/service/metrics/ping",
-              "id": "nexus_nuget_production_write_api_ping",
-              "interval": "15s",
-              "method": "GET",
-              "name": "Nexus NuGet Production write repository ping",
-              "timeout": "5s"
-            }
-          ],
-          "enableTagOverride": false,
-          "id": "nexus_nuget_production_write_api",
-          "name": "artefacts",
-          "port": #{nexus_management_port},
-          "tags": [
-            "write-production-nuget"
-          ]
-        }
-      ]
-    }
-  JSON
+%i[read write].each do |repo_mode|
+  file "/etc/consul/conf.d/nexus-nuget-production-#{repo_mode}.json" do
+    action :create
+    content <<~JSON
+      {
+        "services": [
+          {
+            "checks": [
+              {
+                "header": { "Authorization" : ["Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo"]},
+                "http": "http://localhost:#{nexus_management_port}#{nexus_proxy_path}/service/metrics/ping",
+                "id": "nexus_nuget_production_#{repo_mode}_api_ping",
+                "interval": "15s",
+                "method": "GET",
+                "name": "Nexus NuGet Production #{repo_mode} repository ping",
+                "timeout": "5s"
+              }
+            ],
+            "enableTagOverride": false,
+            "id": "nexus_nuget_production_#{repo_mode}_api",
+            "name": "artefacts",
+            "port": #{nexus_management_port},
+            "tags": [
+              "#{repo_mode}-production-nuget"
+            ]
+          }
+        ]
+      }
+    JSON
+  end
 end
 
 #

@@ -6,10 +6,6 @@ nexus_management_port = 8081
 nexus_proxy_path = '/artefacts'
 
 describe 'resource_artefacts::nexus_artefacts' do
-  context 'creates the nexus user' do
-    let(:chef_run) { ChefSpec::SoloRunner.converge(described_recipe) }
-  end
-
   context 'creates the file system mounts' do
     let(:chef_run) { ChefSpec::SoloRunner.converge(described_recipe) }
 

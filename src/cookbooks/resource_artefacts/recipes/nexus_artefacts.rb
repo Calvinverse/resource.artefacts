@@ -8,7 +8,6 @@
 #
 
 store_path = node['nexus3']['blob_store_path']
-scratch_blob_store_path = node['nexus3']['scratch_blob_store_path']
 
 artefact_blob_store_path = "#{store_path}/artefacts"
 directory artefact_blob_store_path do
@@ -51,6 +50,8 @@ end
 # CONNECT TO CONSUL
 #
 
+nexus_management_port = node['nexus3']['port']
+nexus_proxy_path = node['nexus3']['proxy_path']
 file '/etc/consul/conf.d/nexus-artefacts-production.json' do
   action :create
   content <<~JSON
