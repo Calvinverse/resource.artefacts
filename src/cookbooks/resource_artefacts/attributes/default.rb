@@ -47,8 +47,8 @@ default['nexus3']['scratch_blob_store_path'] = "#{node['nexus3']['blob_store_pat
 
 default['nexus3']['repository']['docker']['port']['http']['production']['read'] = 5000
 default['nexus3']['repository']['docker']['port']['https']['production']['read'] = 5001
-default['nexus3']['repository']['docker']['port']['http']['production']['read'] = 5002
-default['nexus3']['repository']['docker']['port']['https']['production']['read'] = 5003
+default['nexus3']['repository']['docker']['port']['http']['production']['write'] = 5002
+default['nexus3']['repository']['docker']['port']['https']['production']['write'] = 5003
 
 default['nexus3']['repository']['docker']['port']['http']['qa']['read'] = 5010
 default['nexus3']['repository']['docker']['port']['https']['qa']['read'] = 5011
