@@ -93,7 +93,7 @@ describe 'resource_artefacts::nexus_docker' do
     end
 
     it 'creates a repository for production docker images' do
-      expect(chef_run).to run_nexus3_api('docker-production-read').with(
+      expect(chef_run).to run_nexus3_api('docker-production-group').with(
         content: "repository.createDockerGroup('docker-production-read', 5000, 5001, ['docker-production-write', 'docker-proxy'], true, 'docker_production_group')"
       )
     end
@@ -105,7 +105,7 @@ describe 'resource_artefacts::nexus_docker' do
     end
 
     it 'creates a repository for qa docker images' do
-      expect(chef_run).to run_nexus3_api('docker-qa-read').with(
+      expect(chef_run).to run_nexus3_api('docker-qa-group').with(
         content: "repository.createDockerGroup('docker-qa-read', 5010, 5011, ['docker-production-write', 'docker-qa-write', 'docker-proxy'], true, 'docker_qa_group')"
       )
     end
@@ -217,7 +217,7 @@ describe 'resource_artefacts::nexus_docker' do
                 "id": "nexus_docker_production_read_api_ping",
                 "interval": "15s",
                 "method": "GET",
-                "name": "Nexus Docker production read repository ping",
+                "name": "Nexus Docker Production read repository ping",
                 "timeout": "5s"
               }
             ],
@@ -248,7 +248,7 @@ describe 'resource_artefacts::nexus_docker' do
                 "id": "nexus_docker_production_write_api_ping",
                 "interval": "15s",
                 "method": "GET",
-                "name": "Nexus Docker production write repository ping",
+                "name": "Nexus Docker Production write repository ping",
                 "timeout": "5s"
               }
             ],

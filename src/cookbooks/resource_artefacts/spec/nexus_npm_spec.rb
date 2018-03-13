@@ -53,31 +53,31 @@ describe 'resource_artefacts::nexus_npm' do
 
     it 'creates a repository for mirror npm packages' do
       expect(chef_run).to run_nexus3_api('npm-mirror').with(
-        content: "repository.createNpmProxy('npmjs.org','https://www.npmjs.org/', 'npm_mirror', true)"
+        content: "repository.createNpmProxy('npm-proxy','https://www.npmjs.org/', 'npm_mirror', true)"
       )
     end
 
     it 'creates a read blob store for production npm packages' do
       expect(chef_run).to run_nexus3_api('npm-production-group-blob').with(
-        content: "blobStore.createFileBlobStore('npm_production_read', '/srv/nexus/blob/scratch/npm_production_read')"
+        content: "blobStore.createFileBlobStore('npm_production_group', '/srv/nexus/blob/scratch/npm_production_group')"
       )
     end
 
     it 'creates a read repository for production npm packages' do
-      expect(chef_run).to run_nexus3_api('npm-production-read').with(
-        content: "repository.createNpmGroup('npm-production-read', ['npm-production-write', 'npmjs.org'], 'npm_production_group')"
+      expect(chef_run).to run_nexus3_api('npm-production-group').with(
+        content: "repository.createNpmGroup('npm-production-read', ['npm-production-write', 'npm-proxy'], 'npm_production_group')"
       )
     end
 
     it 'creates a read blob store for qa npm packages' do
       expect(chef_run).to run_nexus3_api('npm-qa-group-blob').with(
-        content: "blobStore.createFileBlobStore('npm_qa_read', '/srv/nexus/blob/scratch/npm_qa_read')"
+        content: "blobStore.createFileBlobStore('npm_qa_group', '/srv/nexus/blob/scratch/npm_qa_group')"
       )
     end
 
     it 'creates a read repository for qa npm packages' do
-      expect(chef_run).to run_nexus3_api('npm-qa-read').with(
-        content: "repository.createNpmGroup('npm-qa-read', ['npm-production-write', 'npm-qa-write', 'npmjs.org'], 'npm_qa_group')"
+      expect(chef_run).to run_nexus3_api('npm-qa-group').with(
+        content: "repository.createNpmGroup('npm-qa-read', ['npm-production-write', 'npm-qa-write', 'npm-proxy'], 'npm_qa_group')"
       )
     end
 
@@ -104,7 +104,7 @@ describe 'resource_artefacts::nexus_npm' do
                 "id": "nexus_npm_production_read_api_ping",
                 "interval": "15s",
                 "method": "GET",
-                "name": "Nexus NPM production read repository ping",
+                "name": "Nexus NPM Production read repository ping",
                 "timeout": "5s"
               }
             ],
@@ -135,7 +135,7 @@ describe 'resource_artefacts::nexus_npm' do
                 "id": "nexus_npm_production_write_api_ping",
                 "interval": "15s",
                 "method": "GET",
-                "name": "Nexus NPM production write repository ping",
+                "name": "Nexus NPM Production write repository ping",
                 "timeout": "5s"
               }
             ],

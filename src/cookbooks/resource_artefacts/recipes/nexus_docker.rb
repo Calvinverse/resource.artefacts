@@ -290,7 +290,7 @@ file '/etc/consul/conf.d/nexus-docker-qa-read.json' do
               "timeout": "5s"
             }
           ],
-          "enableTagOverride": true,
+          "enableTagOverride": false,
           "id": "nexus_docker_qa_read_api",
           "name": "artefacts",
           "port": #{port_http_docker_hosted_qa_read},
@@ -320,7 +320,7 @@ file '/etc/consul/conf.d/nexus-docker-qa-write.json' do
               "timeout": "5s"
             }
           ],
-          "enableTagOverride": true,
+          "enableTagOverride": false,
           "id": "nexus_docker_qa_write_api",
           "name": "artefacts",
           "port": #{port_http_docker_hosted_qa_write},

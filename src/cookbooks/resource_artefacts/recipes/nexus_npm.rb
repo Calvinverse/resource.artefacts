@@ -71,19 +71,19 @@ end
 
 repository_name_npm_production_read = 'npm-production-read'
 nexus3_api 'npm-production-group' do
-  content "repository.createNpmGroup('#{repository_name_npm_production_read}', ['#{repository_name_npm_production_write}', '#{repository_name_npm_mirror}'],'#{blob_name_npm_production_group}')"
+  content "repository.createNpmGroup('#{repository_name_npm_production_read}', ['#{repository_name_npm_production_write}', '#{repository_name_npm_mirror}'], '#{blob_name_npm_production_group}')"
   action %i[create run delete]
 end
 
-blob_name_npm_hosted_qa = 'npm_qa_group'
+blob_name_npm_qa_group = 'npm_qa_group'
 nexus3_api 'npm-qa-group-blob' do
-  content "blobStore.createFileBlobStore('#{blob_name_npm_hosted_qa}', '#{scratch_blob_store_path}/#{blob_name_npm_hosted_qa}')"
+  content "blobStore.createFileBlobStore('#{blob_name_npm_qa_group}', '#{scratch_blob_store_path}/#{blob_name_npm_qa_group}')"
   action %i[create run delete]
 end
 
 repository_name_npm_qa_read = 'npm-qa-read'
 nexus3_api 'npm-qa-group' do
-  content "repository.createNpmGroup('#{repository_name_npm_qa_read}', ['#{repository_name_npm_production_write}', '#{repository_name_npm_qa_write}', '#{repository_name_npm_mirror}'],'#{blob_name_npm_production_group}')"
+  content "repository.createNpmGroup('#{repository_name_npm_qa_read}', ['#{repository_name_npm_production_write}', '#{repository_name_npm_qa_write}', '#{repository_name_npm_mirror}'], '#{blob_name_npm_qa_group}')"
   action %i[create run delete]
 end
 

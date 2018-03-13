@@ -29,7 +29,7 @@ describe 'resource_artefacts::nexus_nuget' do
 
     it 'creates a write repository for production nuget packages' do
       expect(chef_run).to run_nexus3_api('nuget-production-write').with(
-        content: "import org.sonatype.nexus.repository.storage.WritePolicy; repository.createNugetproduction('nuget-producton-write', 'nuget_production_write', true, WritePolicy.ALLOW_ONCE)"
+        content: "import org.sonatype.nexus.repository.storage.WritePolicy; repository.createNugetHosted('nuget-production-write', 'nuget_production_write', true, WritePolicy.ALLOW_ONCE)"
       )
     end
 
@@ -46,14 +46,14 @@ describe 'resource_artefacts::nexus_nuget' do
     end
 
     it 'creates a read blob store for production nuget packages' do
-      expect(chef_run).to run_nexus3_api('nuget-production-read-blob').with(
-        content: "blobStore.createFileBlobStore('nuget_production_read', '/srv/nexus/blob/scratch/nuget_production_read')"
+      expect(chef_run).to run_nexus3_api('nuget-production-group-blob').with(
+        content: "blobStore.createFileBlobStore('nuget_production_group', '/srv/nexus/blob/scratch/nuget_production_group')"
       )
     end
 
     it 'creates a read repository for production nuget packages' do
       expect(chef_run).to run_nexus3_api('nuget-production-read').with(
-        content: "repository.createNugetGroup('nuget-producton-read', ['nuget-producton-write', 'nuget-proxy'], 'nuget_production_write')"
+        content: "repository.createNugetGroup('nuget-production-read', ['nuget-production-write', 'nuget-proxy'], 'nuget_production_group')"
       )
     end
 
@@ -80,7 +80,7 @@ describe 'resource_artefacts::nexus_nuget' do
                 "id": "nexus_nuget_production_read_api_ping",
                 "interval": "15s",
                 "method": "GET",
-                "name": "Nexus NuGet production read repository ping",
+                "name": "Nexus NuGet Production read repository ping",
                 "timeout": "5s"
               }
             ],
@@ -111,7 +111,7 @@ describe 'resource_artefacts::nexus_nuget' do
                 "id": "nexus_nuget_production_write_api_ping",
                 "interval": "15s",
                 "method": "GET",
-                "name": "Nexus NuGet production write repository ping",
+                "name": "Nexus NuGet Production write repository ping",
                 "timeout": "5s"
               }
             ],

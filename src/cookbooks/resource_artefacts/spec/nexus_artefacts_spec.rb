@@ -28,7 +28,7 @@ describe 'resource_artefacts::nexus_artefacts' do
     end
 
     it 'creates a repository for production artefact files' do
-      expect(chef_run).to run_nexus3_api('artefact-production-write').with(
+      expect(chef_run).to run_nexus3_api('artefacts-production-write').with(
         content: "import org.sonatype.nexus.repository.storage.WritePolicy; repository.createRawHosted('artefacts-production', 'artefacts_production', true, WritePolicy.ALLOW_ONCE)"
       )
     end
