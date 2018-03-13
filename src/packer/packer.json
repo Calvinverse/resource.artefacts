@@ -9,6 +9,7 @@
         "dir_cookbooks_vendors": "packages/vendor/cookbooks",
         "dir_http_user": null,
         "dir_log": null,
+        "dir_src_provisioning": "src/provisioning",
         "dir_temp": null,
         "dir_vm_import": null,
 
@@ -263,7 +264,7 @@
                 "sudo rm -rf /etc/unbound.d/unbound_zones"
             ],
             "type": "shell"
-        }
+        },
         {
             "type": "file",
             "source": "/home/nexus/log/nexus.log",

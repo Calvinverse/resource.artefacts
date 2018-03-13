@@ -8,6 +8,7 @@
     "dir_cookbooks_vendors": "${DirVendorCookbooksJsonEscaped}",
     "dir_http_user": "",
     "dir_log": "${DirLogsJsonEscaped}",
+    "dir_src_provisioning": "${DirSrcProvisioningJsonEscaped}",
     "dir_temp": "${DirTempJsonEscaped}",
     "dir_vm_import": "${DirTempJsonEscaped}/vm/base",
 
