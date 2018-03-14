@@ -31,6 +31,20 @@ directory scratch_blob_store_path do
 end
 
 #
+# ALLOW NEXUS THROUGH THE FIREWALL
+#
+
+# do this before installing nexus because all the api commands in this cookbook hit the nexus3 HTTP endpoint
+# and if the firewall is blocking the port ...
+nexus_management_port = node['nexus3']['port']
+firewall_rule 'nexus-http' do
+  command :allow
+  description 'Allow Nexus HTTP traffic'
+  dest_port nexus_management_port
+  direction :in
+end
+
+#
 # INSTALL NEXUS
 #
 
@@ -67,18 +81,6 @@ nexus3_api 'ldap-realm' do
   'realmManager = container.lookup(RealmManager.class.getName());' \
   "realmManager.enableRealm('LdapRealm', true);"
   action %i[create run delete]
-end
-
-#
-# ALLOW NEXUS THROUGH THE FIREWALL
-#
-
-nexus_management_port = node['nexus3']['port']
-firewall_rule 'nexus-http' do
-  command :allow
-  description 'Allow Nexus HTTP traffic'
-  dest_port nexus_management_port
-  direction :in
 end
 
 #
