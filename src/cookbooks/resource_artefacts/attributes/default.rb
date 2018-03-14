@@ -36,7 +36,7 @@ default['java']['accept_license_agreement'] = true
 #
 
 default['nexus3']['url'] = 'http://download.sonatype.com/nexus/3/nexus-3.9.0-01-unix.tar.gz'
-default['nexus3']['checksum'] = '40B95B097B43CC8941A9700D24BAF25EF94867286E43EAFFA37CF188726BB2A7'
+default['nexus3']['checksum'] = '9989A455BDA4C62032B10B98C2A1AC40B3BE78FECA90EDF4F714A91DA08F24AC'
 default['nexus3']['path'] = '/opt'
 default['nexus3']['data'] = '/home/nexus'
 default['nexus3']['home'] = '/opt/nexus'
