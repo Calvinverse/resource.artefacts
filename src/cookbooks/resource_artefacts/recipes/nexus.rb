@@ -44,6 +44,11 @@ firewall_rule 'nexus-http' do
   direction :in
 end
 
+# Force the firewall settings so that we can actually communicate with nexus
+firewall 'default' do
+  action :restart
+end
+
 #
 # INSTALL NEXUS
 #

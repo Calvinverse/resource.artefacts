@@ -90,6 +90,10 @@ describe 'resource_artefacts::nexus' do
         direction: :in
       )
     end
+
+    it 'forces the firewall rules to be set' do
+      expect(chef_run).to restart_firewall('default')
+    end
   end
 
   context 'registers the service with consul' do
