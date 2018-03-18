@@ -5,7 +5,7 @@ Describe 'The firewall' {
         It 'should return a status' {
             $ufwOutput | Should Not Be $null
             $ufwOutput.GetType().FullName | Should Be 'System.Object[]'
-            $ufwOutput.Length | Should Be 41
+            $ufwOutput.Length | Should Be 49
         }
 
         It 'should be enabled' {
@@ -62,20 +62,36 @@ Describe 'The firewall' {
             ($ufwOutput | Where-Object {$_ -match '(5001/tcp)\s*(ALLOW)\s*(Anywhere)'} ) | Should Not Be $null
         }
 
+        It 'on port 5002' {
+            ($ufwOutput | Where-Object {$_ -match '(5002/tcp)\s*(ALLOW)\s*(Anywhere)'} ) | Should Not Be $null
+        }
+
+        It 'on port 5003' {
+            ($ufwOutput | Where-Object {$_ -match '(5003/tcp)\s*(ALLOW)\s*(Anywhere)'} ) | Should Not Be $null
+        }
+
         It 'on port 5010' {
-            ($ufwOutput | Where-Object {$_ -match '(5001/tcp)\s*(ALLOW)\s*(Anywhere)'} ) | Should Not Be $null
+            ($ufwOutput | Where-Object {$_ -match '(5010/tcp)\s*(ALLOW)\s*(Anywhere)'} ) | Should Not Be $null
         }
 
         It 'on port 5011' {
-            ($ufwOutput | Where-Object {$_ -match '(5001/tcp)\s*(ALLOW)\s*(Anywhere)'} ) | Should Not Be $null
+            ($ufwOutput | Where-Object {$_ -match '(5011/tcp)\s*(ALLOW)\s*(Anywhere)'} ) | Should Not Be $null
+        }
+
+        It 'on port 5012' {
+            ($ufwOutput | Where-Object {$_ -match '(5012/tcp)\s*(ALLOW)\s*(Anywhere)'} ) | Should Not Be $null
+        }
+
+        It 'on port 5013' {
+            ($ufwOutput | Where-Object {$_ -match '(5013/tcp)\s*(ALLOW)\s*(Anywhere)'} ) | Should Not Be $null
         }
 
         It 'on port 5020' {
-            ($ufwOutput | Where-Object {$_ -match '(5001/tcp)\s*(ALLOW)\s*(Anywhere)'} ) | Should Not Be $null
+            ($ufwOutput | Where-Object {$_ -match '(5020/tcp)\s*(ALLOW)\s*(Anywhere)'} ) | Should Not Be $null
         }
 
         It 'on port 5021' {
-            ($ufwOutput | Where-Object {$_ -match '(5001/tcp)\s*(ALLOW)\s*(Anywhere)'} ) | Should Not Be $null
+            ($ufwOutput | Where-Object {$_ -match '(5021/tcp)\s*(ALLOW)\s*(Anywhere)'} ) | Should Not Be $null
         }
     }
 
