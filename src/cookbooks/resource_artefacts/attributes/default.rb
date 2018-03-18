@@ -46,6 +46,7 @@ default['nexus3']['blob_store_path'] = '/srv/nexus/blob'
 default['nexus3']['scratch_blob_store_path'] = "#{node['nexus3']['blob_store_path']}/scratch"
 default['nexus3']['instance_name'] = 'nexus'
 
+# repositories
 default['nexus3']['repository']['docker']['port']['http']['production']['read'] = 5000
 default['nexus3']['repository']['docker']['port']['https']['production']['read'] = 5001
 default['nexus3']['repository']['docker']['port']['http']['production']['write'] = 5002
@@ -62,6 +63,11 @@ default['nexus3']['repository']['docker']['port']['https']['mirror'] = 5021
 default['nexus3']['service_group'] = 'nexus'
 default['nexus3']['service_user'] = 'nexus'
 
+# consul-template
+default['nexus3']['consul_template_ldap_script_file'] = 'nexus_ldap_script.ctmpl'
+default['nexus3']['script_ldap_file'] = '/tmp/rabbitmq_ldap.sh'
+
+# override defaults
 default['nexus3']['api']['host'] = "http://localhost:#{node['nexus3']['port']}"
 default['nexus3']['api']['endpoint'] = "#{node['nexus3']['api']['host']}/service/rest/v1/script/"
 default['nexus3']['api']['sensitive'] = false
