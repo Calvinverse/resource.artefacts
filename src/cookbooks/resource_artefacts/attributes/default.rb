@@ -58,8 +58,8 @@ default['nexus3']['repository']['docker']['port']['https']['qa']['write'] = 5013
 default['nexus3']['repository']['docker']['port']['http']['mirror'] = 5020
 default['nexus3']['repository']['docker']['port']['https']['mirror'] = 5021
 
-default['nexus']['service_group'] = 'nexus'
-default['nexus']['service_user'] = 'nexus'
+default['nexus3']['service_group'] = 'nexus'
+default['nexus3']['service_user'] = 'nexus'
 
 default['nexus3']['api']['host'] = "http://localhost:#{node['nexus3']['port']}"
 default['nexus3']['api']['endpoint'] = "#{node['nexus3']['api']['host']}/service/rest/v1/script/"

@@ -8,8 +8,8 @@
 #
 
 # Configure the service user under which consul will be run
-poise_service_user node['nexus']['service_user'] do
-  group node['nexus']['service_group']
+poise_service_user node['nexus3']['service_user'] do
+  group node['nexus3']['service_group']
 end
 
 #
@@ -25,9 +25,9 @@ end
 scratch_blob_store_path = node['nexus3']['scratch_blob_store_path']
 directory scratch_blob_store_path do
   action :create
-  group node['nexus']['service_group']
+  group node['nexus3']['service_group']
   mode '777'
-  owner node['nexus']['service_user']
+  owner node['nexus3']['service_user']
 end
 
 #
@@ -55,8 +55,8 @@ end
 
 nexus3 'nexus' do
   action :install
-  group node['nexus']['service_group']
-  user node['nexus']['service_user']
+  group node['nexus3']['service_group']
+  user node['nexus3']['service_user']
 end
 
 #

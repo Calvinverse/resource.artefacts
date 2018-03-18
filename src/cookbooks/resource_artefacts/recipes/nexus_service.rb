@@ -33,7 +33,7 @@ systemd_service 'nexus' do
     limit_nofile 65_536
     restart 'on-abort'
     type 'forking'
-    user node['nexus']['service_user']
+    user node['nexus3']['service_user']
   end
 end
 

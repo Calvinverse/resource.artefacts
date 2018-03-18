@@ -12,9 +12,9 @@ store_path = node['nexus3']['blob_store_path']
 artefact_blob_store_path = "#{store_path}/artefacts"
 directory artefact_blob_store_path do
   action :create
-  group node['nexus']['service_group']
+  group node['nexus3']['service_group']
   mode '777'
-  owner node['nexus']['service_user']
+  owner node['nexus3']['service_user']
 end
 
 #
