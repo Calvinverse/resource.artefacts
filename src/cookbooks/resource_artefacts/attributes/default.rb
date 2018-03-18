@@ -44,6 +44,7 @@ default['nexus3']['port'] = 8081
 default['nexus3']['proxy_path'] = '/artefacts'
 default['nexus3']['blob_store_path'] = '/srv/nexus/blob'
 default['nexus3']['scratch_blob_store_path'] = "#{node['nexus3']['blob_store_path']}/scratch"
+default['nexus3']['instance_name'] = 'nexus'
 
 default['nexus3']['repository']['docker']['port']['http']['production']['read'] = 5000
 default['nexus3']['repository']['docker']['port']['https']['production']['read'] = 5001

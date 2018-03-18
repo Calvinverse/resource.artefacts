@@ -53,7 +53,8 @@ end
 # INSTALL NEXUS
 #
 
-nexus3 'nexus' do
+nexus_instance_name = node['nexus3']['instance_name']
+nexus3 nexus_instance_name do
   action :install
   group node['nexus3']['service_group']
   user node['nexus3']['service_user']
