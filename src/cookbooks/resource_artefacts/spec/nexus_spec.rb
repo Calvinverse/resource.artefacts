@@ -191,9 +191,9 @@ describe 'resource_artefacts::nexus' do
 
       manager.addLdapServerConfiguration(
         new LdapConfiguration(
-          name: {{ FOOBAR }},
+          name: {{ key "/config/environment/directory/name" }},
           connection: new Connection(
-            host: new Connection.Host(Connection.Protocol.ldap, {{}}, 389),
+            host: new Connection.Host(Connection.Protocol.ldap, '{{ key "config/environment/directory/endpoints/mainhost" }}', 389),
             maxIncidentsCount: 3,
             connectionRetryDelay: 300,
             connectionTimeout: 15,
@@ -219,10 +219,6 @@ describe 'resource_artefacts::nexus' do
           )
         )
       )
-
-      {{ range ls "config/environment/directory/endpoints/hosts" }}
-        "{{ .Value }}"
-      {{ end }}
       EOT
 
       if ( ! $(systemctl is-enabled --quiet #{nexus_instance_name}) ); then
