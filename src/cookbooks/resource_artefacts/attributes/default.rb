@@ -69,7 +69,7 @@ default['nexus3']['script_ldap_file'] = '/tmp/rabbitmq_ldap.sh'
 
 # override defaults
 default['nexus3']['api']['host'] = "http://localhost:#{node['nexus3']['port']}"
-default['nexus3']['api']['endpoint'] = "#{node['nexus3']['api']['host']}/service/rest/v1/script/"
+default['nexus3']['api']['endpoint'] = "#{node['nexus3']['api']['host']}/service/rest/v1/script"
 default['nexus3']['api']['sensitive'] = false
 
 #
