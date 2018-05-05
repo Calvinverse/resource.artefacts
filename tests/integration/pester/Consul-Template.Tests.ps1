@@ -2,14 +2,11 @@ Describe 'The consul-template application' {
     Context 'is installed' {
         It 'with binaries in /usr/local/bin' {
             '/usr/local/bin/consul-template' | Should Exist
+            '/usr/local/bin/run_consul-template.sh' | Should Exist
         }
 
         It 'with default configuration in /etc/consul-template.d/config/base.hcl' {
             '/etc/consul-template.d/conf/base.hcl' | Should Exist
-        }
-
-        It 'with vault configuration in /etc/consul-template.d/config/vault.hcl' {
-            '/etc/consul-template.d/conf/vault.hcl' | Should Not Exist
         }
 
         It 'with a data directory in /etc/consul-template.d/data' {
@@ -37,12 +34,8 @@ Documentation=https://github.com/hashicorp/consul-template
 WantedBy=multi-user.target
 
 [Service]
-ExecStart=/usr/local/bin/consul-template -config=/etc/consul-template.d/conf
+ExecStart=/usr/local/bin/run_consul-template.sh
 EnvironmentFile=/etc/environment
-KillMode=mixed
-KillSignal=SIGQUIT
-PIDFile=/etc/consul-template.d/data/pid
-ExecReload=/bin/kill -s HUP $MAINPID
 Restart=on-failure
 
 '@
