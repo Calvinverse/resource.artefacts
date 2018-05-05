@@ -204,7 +204,7 @@ describe 'resource_artefacts::nexus' do
             systemPassword: '{{ .Data.password }}',
         {{ end }}
       {{ end }}
-            systemUsername: '{{ key "/config/environment/directory/users/bind" }}'
+            systemUsername: '{{ key "/config/environment/directory/users/bindcn" }}'
           ),
           mapping: new Mapping(
             emailAddressAttribute: 'mail',

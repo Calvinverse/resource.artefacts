@@ -214,7 +214,7 @@ file "#{consul_template_template_path}/#{nexus_ldap_script_template_file}" do
           systemPassword: '{{ .Data.password }}',
       {{ end }}
     {{ end }}
-          systemUsername: '{{ key "/config/environment/directory/users/bind" }}'
+          systemUsername: '{{ key "/config/environment/directory/users/bindcn" }}'
         ),
         mapping: new Mapping(
           emailAddressAttribute: 'mail',
