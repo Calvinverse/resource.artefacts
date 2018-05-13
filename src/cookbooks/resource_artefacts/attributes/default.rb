@@ -35,11 +35,11 @@ default['java']['accept_license_agreement'] = true
 # NEXUS
 #
 
-default['nexus3']['url'] = 'http://download.sonatype.com/nexus/3/nexus-3.9.0-01-unix.tar.gz'
-default['nexus3']['checksum'] = '9989A455BDA4C62032B10B98C2A1AC40B3BE78FECA90EDF4F714A91DA08F24AC'
+default['nexus3']['version'] = '3.11.0-01'
 default['nexus3']['path'] = '/opt'
 default['nexus3']['data'] = '/home/nexus'
 default['nexus3']['home'] = '/opt/nexus'
+default['nexus3']['install_path'] = "#{node['nexus3']['path']}/nexus-#{node['nexus3']['version']}"
 default['nexus3']['port'] = 8081
 default['nexus3']['proxy_path'] = '/artefacts'
 default['nexus3']['blob_store_path'] = '/srv/nexus/blob'
