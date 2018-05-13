@@ -32,6 +32,23 @@ default['java']['install_flavor'] = 'openjdk'
 default['java']['accept_license_agreement'] = true
 
 #
+# JOLOKIA
+#
+
+default['jolokia']['path']['jar'] = '/usr/local/jolokia'
+default['jolokia']['path']['jar_file'] = "#{node['jolokia']['path']['jar']}/jolokia.jar"
+
+default['jolokia']['agent']['context'] = 'jolokia' # Set this to default because the runtime gets angry otherwise
+default['jolokia']['agent']['host'] = '127.0.0.1' # Linux prefers going to IPv6, but Jolokia hates IPv6
+default['jolokia']['agent']['port'] = 8090
+
+default['jolokia']['telegraf']['consul_template_inputs_file'] = 'telegraf_jolokia_inputs.ctmpl'
+
+default['jolokia']['version'] = '1.5.0'
+default['jolokia']['checksum'] = 'CD7E20A2887E013873D7321CEA1E6BF6BD6FFCDD3CD3968D6950EDD8D79BBFB8'
+default['jolokia']['url']['jar'] = "http://search.maven.org/remotecontent?filepath=org/jolokia/jolokia-jvm/#{node['jolokia']['version']}/jolokia-jvm-#{node['jolokia']['version']}-agent.jar"
+
+#
 # NEXUS
 #
 

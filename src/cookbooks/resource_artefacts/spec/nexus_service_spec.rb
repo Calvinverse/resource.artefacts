@@ -29,6 +29,34 @@ describe 'resource_artefacts::nexus_service' do
     end
   end
 
+  context 'adds the jolokia settings to the jvm properties' do
+    let(:chef_run) { ChefSpec::SoloRunner.converge(described_recipe) }
+
+    nexus_jvm_properties_content = <<~PROPERTIES
+      -Xms1200M
+      -Xmx1200M
+      -XX:MaxDirectMemorySize=2G
+      -XX:+HeapDumpOnOutOfMemoryError
+      -XX:+UnlockDiagnosticVMOptions
+      -XX:+UnsyncloadClass
+      -XX:+LogVMOutput
+      -Djava.net.preferIPv4Stack=true
+      -Dkaraf.home=.
+      -Dkaraf.base=.
+      -Dkaraf.etc=etc/karaf
+      -Djava.util.logging.config.file=etc/karaf/java.util.logging.properties
+      -Dkaraf.data=/home/nexus
+      -Djava.io.tmpdir=/home/nexus/tmp
+      -XX:LogFile=/home/nexus/log/jvm.log
+      -Dkaraf.startLocalConsole=false
+      -javaagent:/usr/local/jolokia/jolokia.jar=protocol=http,host=127.0.0.1,port=8090,discoveryEnabled=false
+    PROPERTIES
+    it 'creates the /opt/nexus-3.11.0-01/bin/nexus.vmoptions' do
+      expect(chef_run).to create_file('/opt/nexus-3.11.0-01/bin/nexus.vmoptions')
+        .with_content(nexus_jvm_properties_content)
+    end
+  end
+
   context 'enables the reverse proxy path' do
     let(:chef_run) { ChefSpec::SoloRunner.converge(described_recipe) }
 
