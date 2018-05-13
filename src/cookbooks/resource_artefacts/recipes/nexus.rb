@@ -151,6 +151,13 @@ nexus3_api 'role-developer-search' do
   action :run
 end
 
+ldap_config_username = node['nexus3']['user']['ldap_config']['username']
+ldap_config_password = node['nexus3']['user']['ldap_config']['password']
+nexus3_api 'user-consul-template' do
+  action :run
+  content "security.addUser('#{ldap_config_username}', 'Consul', 'Template', 'consul.template@localhost.example.com', true, '#{ldap_config_password}', ['nx-ldap-all'])"
+end
+
 #
 # DISABLE ANONYMOUS ACCESS
 #
@@ -176,7 +183,7 @@ file "#{consul_template_template_path}/#{nexus_ldap_script_template_file}" do
 
     {{ if keyExists "config/environment/directory/initialized" }}
 
-    function runNexusScript {
+    run_nexus_script() {
       name=$1
       file=$2
       host=$3
@@ -186,9 +193,13 @@ file "#{consul_template_template_path}/#{nexus_ldap_script_template_file}" do
       # using grape config that points to local Maven repo and Central Repository , default grape config fails on some downloads although artifacts are in Central
       # change the grapeConfig file to point to your repository manager, if you are already running one in your organization
       groovy -Dgroovy.grape.report.downloads=true -Dgrape.config=grapeConfig.xml addUpdateScript.groovy -u "$username" -p "$password" -n "$name" -f "$file" -h "$host"
+
+
+      curl -v -X POST -u "$username:$password" --header "Content-Type: application/json" "$host/service/rest/v1/script" -d "$name.json"
+
       echo "Published $file as $name"
 
-      curl -v -X POST -u $username:$password --header "Content-Type: text/plain" "$host/service/rest/v1/script/$name/run"
+      curl -v -X POST -u "$username:$password" --header "Content-Type: text/plain" "$host/service/rest/v1/script/$name/run"
       echo "Successfully executed $name script"
     }
 
@@ -209,7 +220,7 @@ file "#{consul_template_template_path}/#{nexus_ldap_script_template_file}" do
           connectionTimeout: 15,
           searchBase: '{{ key "/config/environment/directory/query/lookupbase" }}',
           authScheme: 'simple',
-    {{ with secret "secrets/environment/directory/users/bind" }}
+    {{ with secret "secret/environment/directory/users/bind" }}
       {{ if .Data.password }}
           systemPassword: '{{ .Data.password }}',
       {{ end }}
@@ -255,12 +266,7 @@ file "#{consul_template_template_path}/#{nexus_ldap_script_template_file}" do
       done
     fi
 
-    {{ with secret "secrets/services/artefacts/users/api" }}
-      {{ if .Data.password }}
-    runNexusScript setLdap /tmp/nexus_ldap.groovy 'http://localhost:#{nexus_management_port}' {{ key "/config/services/artefacts/users/api" }} {{ .Data.password }}
-      {{ end }}
-    {{ end }}
-
+    run_nexus_script setLdap /tmp/nexus_ldap.groovy 'http://localhost:#{nexus_management_port}' #{ldap_config_username} #{ldap_config_password}
 
     {{ else }}
     echo 'The LDAP information is not available in the Consul K-V. Will not update Nexus.'

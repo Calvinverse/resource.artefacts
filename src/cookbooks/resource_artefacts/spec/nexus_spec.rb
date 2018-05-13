@@ -157,106 +157,113 @@ describe 'resource_artefacts::nexus' do
     end
   end
 
-  context 'adds the consul-template files for rabbitmq' do
+  context 'adds the consul-template files for nexus' do
     let(:chef_run) { ChefSpec::SoloRunner.converge(described_recipe) }
+    let(:node) { chef_run.node }
 
-    nexus_instance_name = 'nexus'
-    nexus_ldap_script_template_content = <<~CONF
-      #!/bin/sh
+    it 'create a consul template user' do
+      ldap_config_username = node['nexus3']['user']['ldap_config']['username']
+      ldap_config_password = node['nexus3']['user']['ldap_config']['password']
+      expect(chef_run).to run_nexus3_api('user-consul-template').with(
+        content: "security.addUser('#{ldap_config_username}', 'Consul', 'Template', 'consul.template@localhost.example.com', true, '#{ldap_config_password}', ['nx-ldap-all'])"
+      )
+    end
 
-      {{ if keyExists "config/environment/directory/initialized" }}
+    it 'creates nexus ldap script template file in the consul-template template directory' do
+      ldap_config_username = node['nexus3']['user']['ldap_config']['username']
+      ldap_config_password = node['nexus3']['user']['ldap_config']['password']
+      nexus_instance_name = 'nexus'
 
-      function runNexusScript {
-        name=$1
-        file=$2
-        host=$3
-        username=$4
-        password=$5
+      nexus_ldap_script_template_content = <<~CONF
+        #!/bin/sh
 
-        # using grape config that points to local Maven repo and Central Repository , default grape config fails on some downloads although artifacts are in Central
-        # change the grapeConfig file to point to your repository manager, if you are already running one in your organization
-        groovy -Dgroovy.grape.report.downloads=true -Dgrape.config=grapeConfig.xml addUpdateScript.groovy -u "$username" -p "$password" -n "$name" -f "$file" -h "$host"
-        echo "Published $file as $name"
+        {{ if keyExists "config/environment/directory/initialized" }}
 
-        curl -v -X POST -u $username:$password --header "Content-Type: text/plain" "$host/service/rest/v1/script/$name/run"
-        echo "Successfully executed $name script"
-      }
+        run_nexus_script() {
+          name=$1
+          file=$2
+          host=$3
+          username=$4
+          password=$5
 
-      echo 'Write the script to configure LDAP in Nexus'
-      cat <<EOT > /tmp/nexus_ldap.groovy
-      import org.sonatype.nexus.ldap.persist.*
-      import org.sonatype.nexus.ldap.persist.entity.*
+          # using grape config that points to local Maven repo and Central Repository , default grape config fails on some downloads although artifacts are in Central
+          # change the grapeConfig file to point to your repository manager, if you are already running one in your organization
+          groovy -Dgroovy.grape.report.downloads=true -Dgrape.config=grapeConfig.xml addUpdateScript.groovy -u "$username" -p "$password" -n "$name" -f "$file" -h "$host"
+          echo "Published $file as $name"
 
-      def manager = container.lookup(LdapConfigurationManager.class.name)
+          curl -v -X POST -u "$username:$password" --header "Content-Type: text/plain" "$host/service/rest/v1/script/$name/run"
+          echo "Successfully executed $name script"
+        }
 
-      manager.addLdapServerConfiguration(
-        new LdapConfiguration(
-          name: {{ key "/config/environment/directory/name" }},
-          connection: new Connection(
-            host: new Connection.Host(Connection.Protocol.ldap, '{{ key "config/environment/directory/endpoints/mainhost" }}', 389),
-            maxIncidentsCount: 3,
-            connectionRetryDelay: 300,
-            connectionTimeout: 15,
-            searchBase: '{{ key "/config/environment/directory/query/lookupbase" }}',
-            authScheme: 'simple',
-      {{ with secret "secrets/environment/directory/users/bind" }}
-        {{ if .Data.password }}
-            systemPassword: '{{ .Data.password }}',
+        echo 'Write the script to configure LDAP in Nexus'
+        cat <<EOT > /tmp/nexus_ldap.groovy
+        import org.sonatype.nexus.ldap.persist.*
+        import org.sonatype.nexus.ldap.persist.entity.*
+
+        def manager = container.lookup(LdapConfigurationManager.class.name)
+
+        manager.addLdapServerConfiguration(
+          new LdapConfiguration(
+            name: {{ key "/config/environment/directory/name" }},
+            connection: new Connection(
+              host: new Connection.Host(Connection.Protocol.ldap, '{{ key "config/environment/directory/endpoints/mainhost" }}', 389),
+              maxIncidentsCount: 3,
+              connectionRetryDelay: 300,
+              connectionTimeout: 15,
+              searchBase: '{{ key "/config/environment/directory/query/lookupbase" }}',
+              authScheme: 'simple',
+        {{ with secret "secret/environment/directory/users/bindcn" }}
+          {{ if .Data.password }}
+              systemPassword: '{{ .Data.password }}',
+          {{ end }}
         {{ end }}
-      {{ end }}
-            systemUsername: '{{ key "/config/environment/directory/users/bindcn" }}'
-          ),
-          mapping: new Mapping(
-            emailAddressAttribute: 'mail',
-            ldapFilter: '{{ key "/config/environment/directory/filter/users/getuser" }}',
-            ldapGroupsAsRoles: true,
-            userBaseDn: '{{ key "/config/environment/directory/query/users/lookupbase" }}',
-            userIdAttribute: 'sAMAccountName',
-            userMemberOfAttribute: 'memberOf',
-            userObjectClass: 'user',
-            userPasswordAttribute: 'userPassword',
-            userRealNameAttribute: 'cn'
+              systemUsername: '{{ key "/config/environment/directory/users/bindcn" }}'
+            ),
+            mapping: new Mapping(
+              emailAddressAttribute: 'mail',
+              ldapFilter: '{{ key "/config/environment/directory/filter/users/getuser" }}',
+              ldapGroupsAsRoles: true,
+              userBaseDn: '{{ key "/config/environment/directory/query/users/lookupbase" }}',
+              userIdAttribute: 'sAMAccountName',
+              userMemberOfAttribute: 'memberOf',
+              userObjectClass: 'user',
+              userPasswordAttribute: 'userPassword',
+              userRealNameAttribute: 'cn'
+            )
           )
         )
-      )
-      EOT
+        EOT
 
-      if ( ! $(systemctl is-enabled --quiet #{nexus_instance_name}) ); then
-        systemctl enable #{nexus_instance_name}
+        if ( ! $(systemctl is-enabled --quiet #{nexus_instance_name}) ); then
+          systemctl enable #{nexus_instance_name}
 
-        while true; do
-          if ( $(systemctl is-enabled --quiet #{nexus_instance_name}) ); then
-              break
-          fi
+          while true; do
+            if ( $(systemctl is-enabled --quiet #{nexus_instance_name}) ); then
+                break
+            fi
 
-          sleep 1
-        done
-      fi
+            sleep 1
+          done
+        fi
 
-      if ( ! $(systemctl is-active --quiet #{nexus_instance_name}) ); then
-        systemctl start #{nexus_instance_name}
+        if ( ! $(systemctl is-active --quiet #{nexus_instance_name}) ); then
+          systemctl start #{nexus_instance_name}
 
-        while true; do
-          if ( $(systemctl is-active --quiet #{nexus_instance_name}) ); then
-              break
-          fi
+          while true; do
+            if ( $(systemctl is-active --quiet #{nexus_instance_name}) ); then
+                break
+            fi
 
-          sleep 1
-        done
-      fi
+            sleep 1
+          done
+        fi
 
-      {{ with secret "secrets/services/artefacts/users/api" }}
-        {{ if .Data.password }}
-      runNexusScript setLdap /tmp/nexus_ldap.groovy 'http://localhost:#{nexus_management_port}' {{ key "/config/services/artefacts/users/api" }} {{ .Data.password }}
+        run_nexus_script setLdap /tmp/nexus_ldap.groovy 'http://localhost:#{nexus_management_port}' '#{ldap_config_username}' '#{ldap_config_password}'
+
+        {{ else }}
+        echo 'The LDAP information is not available in the Consul K-V. Will not update Nexus.'
         {{ end }}
-      {{ end }}
-
-
-      {{ else }}
-      echo 'The LDAP information is not available in the Consul K-V. Will not update Nexus.'
-      {{ end }}
-    CONF
-    it 'creates nexus ldap script template file in the consul-template template directory' do
+      CONF
       expect(chef_run).to create_file('/etc/consul-template.d/templates/nexus_ldap_script.ctmpl')
         .with_content(nexus_ldap_script_template_content)
     end
@@ -274,7 +281,7 @@ describe 'resource_artefacts::nexus' do
         # This is the destination path on disk where the source template will render.
         # If the parent directories do not exist, Consul Template will attempt to
         # create them, unless create_dest_dirs is false.
-        destination = "/tmp/rabbitmq_ldap.sh"
+        destination = "/tmp/nexus_ldap.sh"
 
         # This options tells Consul Template to create the parent directories of the
         # destination path if they do not exist. The default value is true.
@@ -284,7 +291,7 @@ describe 'resource_artefacts::nexus' do
         # command will only run if the resulting template changes. The command must
         # return within 30s (configurable), and it must have a successful exit code.
         # Consul Template is not a replacement for a process monitor or init system.
-        command = "sh /tmp/rabbitmq_ldap.sh"
+        command = "sh /tmp/nexus_ldap.sh"
 
         # This is the maximum amount of time to wait for the optional command to
         # return. Default is 30s.
