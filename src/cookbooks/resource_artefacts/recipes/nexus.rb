@@ -198,17 +198,17 @@ file "#{consul_template_template_path}/#{nexus_ldap_script_template_file}" do
       password=$5
 
       content=$(tr -d '\n' < $file)
-      cat <<EOT > "/tmp/${name}.json"
+      cat <<EOT > "/tmp/$name.json"
     {
-      "name": "${name}",
+      "name": "$name",
       "type": "groovy",
-      "content": "${content}"
+      "content": "$content"
     }
     EOT
-      curl -v -X POST -u "$username:$password" --header "Content-Type: application/json" "$host/service/rest/v1/script" -d "/tmp/${name}.json"
+      curl -v -X POST -u "$username:$password" --header "Content-Type: application/json" "$host/#{nexus_proxy_path}/service/rest/v1/script" -d @"/tmp/$name.json"
       echo "Published $file as $name"
 
-      curl -v -X POST -u "$username:$password" --header "Content-Type: text/plain" "$host/service/rest/v1/script/$name/run"
+      curl -v -X POST -u "$username:$password" --header "Content-Type: text/plain" "$host/#{nexus_proxy_path}/service/rest/v1/script/$name/run"
       echo "Successfully executed $name script"
     }
 
@@ -221,7 +221,7 @@ file "#{consul_template_template_path}/#{nexus_ldap_script_template_file}" do
 
     manager.addLdapServerConfiguration(
       new LdapConfiguration(
-        name: {{ key "/config/environment/directory/name" }},
+        name: '{{ key "/config/environment/directory/name" }}',
         connection: new Connection(
           host: new Connection.Host(Connection.Protocol.ldap, '{{ key "config/environment/directory/endpoints/mainhost" }}', 389),
           maxIncidentsCount: 3,
