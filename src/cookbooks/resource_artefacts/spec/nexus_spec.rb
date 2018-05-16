@@ -194,9 +194,15 @@ describe 'resource_artefacts::nexus' do
           username=$4
           password=$5
 
-          # using grape config that points to local Maven repo and Central Repository , default grape config fails on some downloads although artifacts are in Central
-          # change the grapeConfig file to point to your repository manager, if you are already running one in your organization
-          groovy -Dgroovy.grape.report.downloads=true -Dgrape.config=grapeConfig.xml addUpdateScript.groovy -u "$username" -p "$password" -n "$name" -f "$file" -h "$host"
+          content=$(tr -d '\n' < $file)
+          cat <<EOT > "/tmp/${name}.json"
+        {
+          "name": "${name}",
+          "type": "groovy",
+          "content": "${content}"
+        }
+        EOT
+          curl -v -X POST -u "$username:$password" --header "Content-Type: application/json" "$host/service/rest/v1/script" -d "/tmp/${name}.json"
           echo "Published $file as $name"
 
           curl -v -X POST -u "$username:$password" --header "Content-Type: text/plain" "$host/service/rest/v1/script/$name/run"
