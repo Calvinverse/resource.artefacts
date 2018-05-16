@@ -151,11 +151,18 @@ nexus3_api 'role-developer-search' do
   action :run
 end
 
+nexus3_api 'role-ldap-admin' do
+  content "security.addRole('nx-ldap-admin', 'nx-ldap-admin'," \
+    " 'User with privileges to allow configure LDAP'," \
+    " ['nx-ldap-all'], [''])"
+  action :run
+end
+
 ldap_config_username = node['nexus3']['user']['ldap_config']['username']
 ldap_config_password = node['nexus3']['user']['ldap_config']['password']
 nexus3_api 'user-consul-template' do
   action :run
-  content "security.addUser('#{ldap_config_username}', 'Consul', 'Template', 'consul.template@localhost.example.com', true, '#{ldap_config_password}', ['nx-ldap-all'])"
+  content "security.addUser('#{ldap_config_username}', 'Consul', 'Template', 'consul.template@localhost.example.com', true, '#{ldap_config_password}', ['nx-ldap-admin'])"
 end
 
 #

@@ -161,11 +161,19 @@ describe 'resource_artefacts::nexus' do
     let(:chef_run) { ChefSpec::SoloRunner.converge(described_recipe) }
     let(:node) { chef_run.node }
 
+    it 'create a nx-ldap-admin role' do
+      expect(chef_run).to run_nexus3_api('role-ldap-admin').with(
+        content: "security.addRole('nx-ldap-admin', 'nx-ldap-admin'," \
+        " 'User with privileges to allow configure LDAP'," \
+        " ['nx-ldap-all'], [''])"
+      )
+    end
+
     it 'create a consul template user' do
       ldap_config_username = node['nexus3']['user']['ldap_config']['username']
       ldap_config_password = node['nexus3']['user']['ldap_config']['password']
       expect(chef_run).to run_nexus3_api('user-consul-template').with(
-        content: "security.addUser('#{ldap_config_username}', 'Consul', 'Template', 'consul.template@localhost.example.com', true, '#{ldap_config_password}', ['nx-ldap-all'])"
+        content: "security.addUser('#{ldap_config_username}', 'Consul', 'Template', 'consul.template@localhost.example.com', true, '#{ldap_config_password}', ['nx-ldap-admin'])"
       )
     end
 
