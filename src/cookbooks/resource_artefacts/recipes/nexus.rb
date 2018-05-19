@@ -205,10 +205,10 @@ file "#{consul_template_template_path}/#{nexus_ldap_script_template_file}" do
       "content": "$content"
     }
     EOT
-      curl -v -X POST -u "$username:$password" --header "Content-Type: application/json" "$host/#{nexus_proxy_path}/service/rest/v1/script" -d @"/tmp/$name.json"
+      curl -v -X POST -u "$username:$password" --header "Content-Type: application/json" "$host#{nexus_proxy_path}/service/rest/v1/script" -d @"/tmp/$name.json"
       echo "Published $file as $name"
 
-      curl -v -X POST -u "$username:$password" --header "Content-Type: text/plain" "$host/#{nexus_proxy_path}/service/rest/v1/script/$name/run"
+      curl -v -X POST -u "$username:$password" --header "Content-Type: text/plain" "$host#{nexus_proxy_path}/service/rest/v1/script/$name/run"
       echo "Successfully executed $name script"
     }
 
@@ -240,7 +240,7 @@ file "#{consul_template_template_path}/#{nexus_ldap_script_template_file}" do
           emailAddressAttribute: 'mail',
           ldapFilter: '{{ key "/config/environment/directory/filter/users/getuser" }}',
           ldapGroupsAsRoles: true,
-          userBaseDn: '{{ key "/config/environment/directory/query/users/lookupbase" }}',
+          userBaseDn: '',
           userIdAttribute: 'sAMAccountName',
           userMemberOfAttribute: 'memberOf',
           userObjectClass: 'user',
@@ -275,7 +275,7 @@ file "#{consul_template_template_path}/#{nexus_ldap_script_template_file}" do
       done
     fi
 
-    run_nexus_script setLdap /tmp/nexus_ldap.groovy 'http://localhost:#{nexus_management_port}' #{ldap_config_username} #{ldap_config_password}
+    run_nexus_script setLdap /tmp/nexus_ldap.groovy 'http://localhost:#{nexus_management_port}' '#{ldap_config_username}' '#{ldap_config_password}'
 
     {{ else }}
     echo 'The LDAP information is not available in the Consul K-V. Will not update Nexus.'

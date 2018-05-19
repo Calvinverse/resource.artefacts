@@ -202,10 +202,10 @@ describe 'resource_artefacts::nexus' do
           "content": "$content"
         }
         EOT
-          curl -v -X POST -u "$username:$password" --header "Content-Type: application/json" "$host/#{nexus_proxy_path}/service/rest/v1/script" -d @"/tmp/$name.json"
+          curl -v -X POST -u "$username:$password" --header "Content-Type: application/json" "$host#{nexus_proxy_path}/service/rest/v1/script" -d @"/tmp/$name.json"
           echo "Published $file as $name"
 
-          curl -v -X POST -u "$username:$password" --header "Content-Type: text/plain" "$host/#{nexus_proxy_path}/service/rest/v1/script/$name/run"
+          curl -v -X POST -u "$username:$password" --header "Content-Type: text/plain" "$host#{nexus_proxy_path}/service/rest/v1/script/$name/run"
           echo "Successfully executed $name script"
         }
 
@@ -226,7 +226,7 @@ describe 'resource_artefacts::nexus' do
               connectionTimeout: 15,
               searchBase: '{{ key "/config/environment/directory/query/lookupbase" }}',
               authScheme: 'simple',
-        {{ with secret "secret/environment/directory/users/bindcn" }}
+        {{ with secret "secret/environment/directory/users/bind" }}
           {{ if .Data.password }}
               systemPassword: '{{ .Data.password }}',
           {{ end }}
@@ -237,7 +237,7 @@ describe 'resource_artefacts::nexus' do
               emailAddressAttribute: 'mail',
               ldapFilter: '{{ key "/config/environment/directory/filter/users/getuser" }}',
               ldapGroupsAsRoles: true,
-              userBaseDn: '{{ key "/config/environment/directory/query/users/lookupbase" }}',
+              userBaseDn: '',
               userIdAttribute: 'sAMAccountName',
               userMemberOfAttribute: 'memberOf',
               userObjectClass: 'user',
