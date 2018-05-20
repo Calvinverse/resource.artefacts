@@ -251,9 +251,16 @@ file "#{consul_template_template_path}/#{nexus_ldap_script_template_file}" do
           userPasswordAttribute: 'userPassword',
           userRealNameAttribute: 'cn',
           userSubtree: true
+        )
       )
-    )
     );
+
+    def role = security.addRole(
+      '{{ key "config/environment/directory/query/groups/artefacts/administrators" }}',
+      'ldap-administrators',
+      "Mapping for {{ key "/config/environment/directory/name" }} ",
+      [],
+      ['nx-admin']);
     EOT
 
     if ( ! $(systemctl is-enabled --quiet #{nexus_instance_name}) ); then
