@@ -207,14 +207,17 @@ describe 'resource_artefacts::nexus' do
 
           curl -v -X POST -u "$username:$password" --header "Content-Type: text/plain" "$host#{nexus_proxy_path}/service/rest/v1/script/$name/run"
           echo "Successfully executed $name script"
+
+          curl -v -X DELETE -u "$username:$password" "$host#{nexus_proxy_path}/service/rest/v1/script/$name"
+          echo "Deleted script $name"
         }
 
         echo 'Write the script to configure LDAP in Nexus'
         cat <<EOT > /tmp/nexus_ldap.groovy
-        import org.sonatype.nexus.ldap.persist.*
-        import org.sonatype.nexus.ldap.persist.entity.*
+        import org.sonatype.nexus.ldap.persist.*;
+        import org.sonatype.nexus.ldap.persist.entity.*;
 
-        def manager = container.lookup(LdapConfigurationManager.class.name)
+        def manager = container.lookup(LdapConfigurationManager.class.name);
 
         manager.addLdapServerConfiguration(
           new LdapConfiguration(
@@ -242,10 +245,11 @@ describe 'resource_artefacts::nexus' do
               userMemberOfAttribute: 'memberOf',
               userObjectClass: 'user',
               userPasswordAttribute: 'userPassword',
-              userRealNameAttribute: 'cn'
-            )
+              userRealNameAttribute: 'cn',
+              userSubtree: true
           )
         )
+        );
         EOT
 
         if ( ! $(systemctl is-enabled --quiet #{nexus_instance_name}) ); then
