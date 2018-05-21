@@ -1,0 +1,24 @@
+{
+    "bootstrap_expect": 1,
+
+    "datacenter": "test-integration",
+    "domain": "integrationtest",
+
+    "data_dir": "/test/consul/data",
+
+    "log_level": "INFO",
+
+    "node_id": "bfd590c8-82fd-4625-ac9a-077d34503ffc",
+
+    "node_name": "test-integration_server",
+
+    "ports" : {
+        "dns" : 8650,
+        "http" : 8550,
+        "serf_lan" : 8351,
+        "serf_wan" : 8352,
+        "server" : 8350
+    },
+
+    "server": true
+}

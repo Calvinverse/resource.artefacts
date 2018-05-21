@@ -10,3 +10,4 @@ default['resource']['version_patch'] = '${VersionPatch}'
 default['resource']['version_semantic'] = '${VersionSemantic}'
 
 default['resource']['name'] = '${ProductName}'
+default['resource']['name_short'] = '${ProductShortName}'

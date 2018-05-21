@@ -1,50 +1,11 @@
 # frozen_string_literal: true
 
 #
-# CONSUL
+# CONSULTEMPLATE
 #
 
-default['consul']['version'] = '0.9.2'
-default['consul']['config']['domain'] = 'consulverse'
-
-# This is not a consul server node
-default['consul']['config']['server'] = false
-
-# For the time being don't verify incoming and outgoing TLS signatures
-default['consul']['config']['verify_incoming'] = false
-default['consul']['config']['verify_outgoing'] = false
-
-# Bind the client address to the local host. The advertise and bind addresses
-# will be set in a separate configuration file
-default['consul']['config']['client_addr'] = '127.0.0.1'
-
-# Do not allow consul to use the host information for the node id
-default['consul']['config']['disable_host_node_id'] = true
-
-# Disable remote exec
-default['consul']['config']['disable_remote_exec'] = true
-
-# Disable the update check
-default['consul']['config']['disable_update_check'] = true
-
-# Set the DNS configuration
-default['consul']['config']['dns_config'] = {
-  allow_stale: true,
-  max_stale: '87600h',
-  node_ttl: '10s',
-  service_ttl: {
-    '*': '10s'
-  }
-}
-
-# Always leave the cluster if we are terminated
-default['consul']['config']['leave_on_terminate'] = true
-
-# Send all logs to syslog
-default['consul']['config']['log_level'] = 'INFO'
-default['consul']['config']['enable_syslog'] = true
-
-default['consul']['config']['owner'] = 'root'
+default['consul_template']['config_path'] = '/etc/consul-template.d/conf'
+default['consul_template']['template_path'] = '/etc/consul-template.d/templates'
 
 #
 # FIREWALL
@@ -71,38 +32,69 @@ default['java']['install_flavor'] = 'openjdk'
 default['java']['accept_license_agreement'] = true
 
 #
+# JOLOKIA
+#
+
+default['jolokia']['path']['jar'] = '/usr/local/jolokia'
+default['jolokia']['path']['jar_file'] = "#{node['jolokia']['path']['jar']}/jolokia.jar"
+
+default['jolokia']['agent']['context'] = 'jolokia' # Set this to default because the runtime gets angry otherwise
+default['jolokia']['agent']['host'] = '127.0.0.1' # Linux prefers going to IPv6, but Jolokia hates IPv6
+default['jolokia']['agent']['port'] = 8090
+
+default['jolokia']['telegraf']['consul_template_inputs_file'] = 'telegraf_jolokia_inputs.ctmpl'
+
+default['jolokia']['version'] = '1.5.0'
+default['jolokia']['checksum'] = 'CD7E20A2887E013873D7321CEA1E6BF6BD6FFCDD3CD3968D6950EDD8D79BBFB8'
+default['jolokia']['url']['jar'] = "http://search.maven.org/remotecontent?filepath=org/jolokia/jolokia-jvm/#{node['jolokia']['version']}/jolokia-jvm-#{node['jolokia']['version']}-agent.jar"
+
+#
 # NEXUS
 #
 
-default['nexus3']['url'] = 'https://sonatype-download.global.ssl.fastly.net/nexus/3/nexus-3.6.0-02-unix.tar.gz'
-default['nexus3']['checksum'] = '40B95B097B43CC8941A9700D24BAF25EF94867286E43EAFFA37CF188726BB2A7'
+default['nexus3']['version'] = '3.11.0-01'
 default['nexus3']['path'] = '/opt'
 default['nexus3']['data'] = '/home/nexus'
 default['nexus3']['home'] = '/opt/nexus'
+default['nexus3']['install_path'] = "#{node['nexus3']['path']}/nexus-#{node['nexus3']['version']}"
 default['nexus3']['port'] = 8081
 default['nexus3']['proxy_path'] = '/artefacts'
+default['nexus3']['blob_store_path'] = '/srv/nexus/blob'
+default['nexus3']['scratch_blob_store_path'] = "#{node['nexus3']['blob_store_path']}/scratch"
+default['nexus3']['instance_name'] = 'nexus'
 
-default['nexus3']['repository']['docker']['port']['http']['production'] = 5000
-default['nexus3']['repository']['docker']['port']['https']['production'] = 5001
-default['nexus3']['repository']['docker']['port']['http']['qa'] = 5010
-default['nexus3']['repository']['docker']['port']['https']['qa'] = 5011
+# users
+default['nexus3']['user']['ldap_config']['username'] = 'consul.template'
+default['nexus3']['user']['ldap_config']['password'] = SecureRandom.uuid
+
+# repositories
+default['nexus3']['repository']['docker']['port']['http']['production']['read'] = 5000
+default['nexus3']['repository']['docker']['port']['https']['production']['read'] = 5001
+default['nexus3']['repository']['docker']['port']['http']['production']['write'] = 5002
+default['nexus3']['repository']['docker']['port']['https']['production']['write'] = 5003
+
+default['nexus3']['repository']['docker']['port']['http']['qa']['read'] = 5010
+default['nexus3']['repository']['docker']['port']['https']['qa']['read'] = 5011
+default['nexus3']['repository']['docker']['port']['http']['qa']['write'] = 5012
+default['nexus3']['repository']['docker']['port']['https']['qa']['write'] = 5013
+
 default['nexus3']['repository']['docker']['port']['http']['mirror'] = 5020
 default['nexus3']['repository']['docker']['port']['https']['mirror'] = 5021
 
-default['nexus']['service_group'] = 'nexus'
-default['nexus']['service_user'] = 'nexus'
+default['nexus3']['service_group'] = 'nexus'
+default['nexus3']['service_user'] = 'nexus'
+
+# consul-template
+default['nexus3']['consul_template_ldap_script_file'] = 'nexus_ldap_script.ctmpl'
+default['nexus3']['script_ldap_file'] = '/tmp/nexus_ldap.sh'
+
+# override defaults
+default['nexus3']['api']['host'] = "http://localhost:#{node['nexus3']['port']}"
+default['nexus3']['api']['endpoint'] = "#{node['nexus3']['api']['host']}/service/rest/v1/script"
+default['nexus3']['api']['sensitive'] = false
 
 #
-# PROVISIONING
+# TELEGRAF
 #
 
-#
-# UNBOUND
-#
-
-default['unbound']['service_user'] = 'unbound'
-default['unbound']['service_group'] = 'unbound'
-
-default['paths']['unbound_config'] = '/etc/unbound.d'
-
-default['file_name']['unbound_config_file'] = 'unbound.conf'
+default['telegraf']['config_directory'] = '/etc/telegraf/telegraf.d'

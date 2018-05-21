@@ -190,6 +190,7 @@
         <!-- <DirSrc>$(DirWorkspace)\src</DirSrc> -->
         <DirSrcCookbooks>$(DirSrc)\cookbooks</DirSrcCookbooks>
         <DirSrcPacker>$(DirSrc)\packer</DirSrcPacker>
+        <DirSrcProvisioning>$(DirSrc)\provisioning</DirSrcProvisioning>
 
         <!-- The directory that contains the template files for the project -->
         <!-- <DirTemplates>$(DirWorkspace)\templates</DirTemplates> -->
@@ -231,7 +232,7 @@
     </PropertyGroup>
 
     <PropertyGroup>
-        <VersionLinuxBaseResource>0.1.2</VersionLinuxBaseResource>
+        <VersionLinuxBaseResource>0.2.2</VersionLinuxBaseResource>
     </PropertyGroup>
 
 
@@ -528,8 +529,14 @@
         Additional items that should be available for the template replacement.
         The default template parameters, as indicated at the top of this file, are always available.
     -->
+    <PropertyGroup>
+        <ProductNamePrefix>Resource.</ProductNamePrefix>
+    </PropertyGroup>
     <ItemGroup>
         <!-- General -->
+        <TemplateTokens Include="ProductShortName">
+            <ReplacementValue>$(ProductName.SubString($(ProductNamePrefix.Length)).Replace('.', '-').ToLower())</ReplacementValue>
+        </TemplateTokens>
         <TemplateTokens Include="LocalAdministratorName">
             <ReplacementValue>thebigkahuna</ReplacementValue>
         </TemplateTokens>
@@ -548,17 +555,24 @@
         </TemplateTokens>
 
         <!-- For the Packer config -->
+        <TemplateTokens Include="NameCookbook">
+            <ReplacementValue>$(NameCookbook)</ReplacementValue>
+        </TemplateTokens>
+
         <TemplateTokens Include="DirDeployJsonEscaped">
             <ReplacementValue>$(DirBuildDeploy.Replace('\', '/'))</ReplacementValue>
         </TemplateTokens>
         <TemplateTokens Include="DirLogsJsonEscaped">
             <ReplacementValue>$(DirBuildLogs.Replace('\', '/'))</ReplacementValue>
         </TemplateTokens>
-        <TemplateTokens Include="DirTempJsonEscaped">
-            <ReplacementValue>$(DirBuildTemp.Replace('\', '/'))</ReplacementValue>
-        </TemplateTokens>
         <TemplateTokens Include="DirSrcCookbooksJsonEscaped">
             <ReplacementValue>$(DirBuildTempCookbooks.Replace('\', '/'))</ReplacementValue>
+        </TemplateTokens>
+        <TemplateTokens Include="DirSrcProvisioningJsonEscaped">
+            <ReplacementValue>$(DirSrcProvisioning.Replace('\', '/'))</ReplacementValue>
+        </TemplateTokens>
+        <TemplateTokens Include="DirTempJsonEscaped">
+            <ReplacementValue>$(DirBuildTemp.Replace('\', '/'))</ReplacementValue>
         </TemplateTokens>
         <TemplateTokens Include="DirVendorCookbooksJsonEscaped">
             <ReplacementValue>$(DirVendorCookbooks.Replace('\', '/'))</ReplacementValue>
