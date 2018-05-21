@@ -162,7 +162,7 @@ describe 'resource_artefacts::nexus' do
     let(:node) { chef_run.node }
 
     it 'create a role-consul-template-local role' do
-      expect(chef_run).to run_nexus3_api('role-ldap-admin').with(
+      expect(chef_run).to run_nexus3_api('role-consul-template-local').with(
         content: "security.addRole('role-consul-template-local', 'role-consul-template-local'," \
         " 'User with privileges required for Consul-Template to configure Nexus'," \
         " ['nx-ldap-all', 'nx-script-*-*'], [''])"
@@ -216,6 +216,7 @@ describe 'resource_artefacts::nexus' do
         cat <<EOT > /tmp/nexus_ldap.groovy
         import org.sonatype.nexus.ldap.persist.*;
         import org.sonatype.nexus.ldap.persist.entity.*;
+        import org.sonatype.nexus.security.SecuritySystem;
 
         def manager = container.lookup(LdapConfigurationManager.class.name);
 
@@ -244,7 +245,7 @@ describe 'resource_artefacts::nexus' do
               userIdAttribute: 'sAMAccountName',
               userMemberOfAttribute: 'memberOf',
               userObjectClass: 'user',
-              userPasswordAttribute: 'userPassword',
+              userPasswordAttribute: '',
               userRealNameAttribute: 'cn',
               userSubtree: true
             )
@@ -254,7 +255,7 @@ describe 'resource_artefacts::nexus' do
         def role = security.addRole(
           '{{ key "config/environment/directory/query/groups/artefacts/administrators" }}',
           'ldap-administrators',
-          "Mapping for {{ key "/config/environment/directory/name" }} ",
+          'Mapping {{ key "config/environment/directory/query/groups/artefacts/administrators" }} to nx-admin for {{ key "/config/environment/directory/name" }}',
           [],
           ['nx-admin']);
         EOT

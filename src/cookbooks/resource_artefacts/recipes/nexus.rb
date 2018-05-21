@@ -248,7 +248,7 @@ file "#{consul_template_template_path}/#{nexus_ldap_script_template_file}" do
           userIdAttribute: 'sAMAccountName',
           userMemberOfAttribute: 'memberOf',
           userObjectClass: 'user',
-          userPasswordAttribute: 'userPassword',
+          userPasswordAttribute: '',
           userRealNameAttribute: 'cn',
           userSubtree: true
         )
@@ -258,7 +258,7 @@ file "#{consul_template_template_path}/#{nexus_ldap_script_template_file}" do
     def role = security.addRole(
       '{{ key "config/environment/directory/query/groups/artefacts/administrators" }}',
       'ldap-administrators',
-      "Mapping for {{ key "/config/environment/directory/name" }} ",
+      'Mapping {{ key "config/environment/directory/query/groups/artefacts/administrators" }} to nx-admin for {{ key "/config/environment/directory/name" }}',
       [],
       ['nx-admin']);
     EOT
