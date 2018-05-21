@@ -261,6 +261,8 @@ file "#{consul_template_template_path}/#{nexus_ldap_script_template_file}" do
       'Mapping {{ key "config/environment/directory/query/groups/artefacts/administrators" }} to nx-admin for {{ key "/config/environment/directory/name" }}',
       [],
       ['nx-admin']);
+
+    security.securitySystem.deleteUser('admin', 'default');
     EOT
 
     if ( ! $(systemctl is-enabled --quiet #{nexus_instance_name}) ); then
