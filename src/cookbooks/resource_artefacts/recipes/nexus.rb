@@ -8,60 +8,56 @@
 #
 
 # Configure the service user under which consul will be run
-poise_service_user node['nexus']['service_user'] do
-  group node['nexus']['service_group']
+poise_service_user node['nexus3']['service_user'] do
+  group node['nexus3']['service_group']
 end
 
 #
 # CONFIGURE THE FILE SYSTEM
 #
 
-store_path = '/srv/nexus/blob'
+store_path = node['nexus3']['blob_store_path']
 directory store_path do
   action :create
   recursive true
 end
 
-scratch_blob_store_path = "#{store_path}/scratch"
+scratch_blob_store_path = node['nexus3']['scratch_blob_store_path']
 directory scratch_blob_store_path do
   action :create
-  group node['nexus']['service_group']
+  group node['nexus3']['service_group']
   mode '777'
-  owner node['nexus']['service_user']
+  owner node['nexus3']['service_user']
 end
 
-docker_blob_store_path = "#{store_path}/docker"
-directory docker_blob_store_path do
-  action :create
-  group node['nexus']['service_group']
-  mode '777'
-  owner node['nexus']['service_user']
+#
+# ALLOW NEXUS THROUGH THE FIREWALL
+#
+
+# do this before installing nexus because all the api commands in this cookbook hit the nexus3 HTTP endpoint
+# and if the firewall is blocking the port ...
+nexus_management_port = node['nexus3']['port']
+firewall_rule 'nexus-http' do
+  command :allow
+  description 'Allow Nexus HTTP traffic'
+  dest_port nexus_management_port
+  direction :in
 end
 
-npm_blob_store_path = "#{store_path}/npm"
-directory npm_blob_store_path do
-  action :create
-  group node['nexus']['service_group']
-  mode '777'
-  owner node['nexus']['service_user']
-end
-
-nuget_blob_store_path = "#{store_path}/nuget"
-directory nuget_blob_store_path do
-  action :create
-  group node['nexus']['service_group']
-  mode '777'
-  owner node['nexus']['service_user']
+# Force the firewall settings so that we can actually communicate with nexus
+firewall 'default' do
+  action :restart
 end
 
 #
 # INSTALL NEXUS
 #
 
-nexus3 'nexus' do
+nexus_instance_name = node['nexus3']['instance_name']
+nexus3 nexus_instance_name do
   action :install
-  group node['nexus']['service_group']
-  user node['nexus']['service_user']
+  group node['nexus3']['service_group']
+  user node['nexus3']['service_user']
 end
 
 #
@@ -83,186 +79,6 @@ nexus3_api 'delete_default_blobstore' do
 end
 
 #
-# ADD THE DOCKER REPOSITORIES
-#
-# See: https://github.com/sonatype/nexus-public/blob/master/plugins/nexus-script-plugin/src/main/java/org/sonatype/nexus/script/plugin/RepositoryApi.java
-
-blob_name_docker_hosted_production = 'docker_production'
-nexus3_api 'docker-production-blob' do
-  content "blobStore.createFileBlobStore('#{blob_name_docker_hosted_production}', '#{docker_blob_store_path}/#{blob_name_docker_hosted_production}')"
-  action %i[create run delete]
-end
-
-port_http_docker_hosted_production = node['nexus3']['repository']['docker']['port']['http']['production']
-port_https_docker_hosted_production = node['nexus3']['repository']['docker']['port']['https']['production']
-nexus3_api 'docker-production' do
-  content "import org.sonatype.nexus.repository.storage.WritePolicy; repository.createDockerHosted('docker-production', #{port_http_docker_hosted_production}, #{port_https_docker_hosted_production}, '#{blob_name_docker_hosted_production}', true, true, WritePolicy.ALLOW_ONCE)"
-  action %i[create run delete]
-end
-
-blob_name_docker_hosted_qa = 'docker_qa'
-nexus3_api 'docker-qa-blob' do
-  content "blobStore.createFileBlobStore('#{blob_name_docker_hosted_qa}', '#{docker_blob_store_path}/#{blob_name_docker_hosted_qa}')"
-  action %i[create run delete]
-end
-
-port_http_docker_hosted_qa = node['nexus3']['repository']['docker']['port']['http']['qa']
-port_https_docker_hosted_qa = node['nexus3']['repository']['docker']['port']['https']['qa']
-nexus3_api 'docker-qa' do
-  content "import org.sonatype.nexus.repository.storage.WritePolicy; repository.createDockerHosted('docker-qa', #{port_http_docker_hosted_qa}, #{port_https_docker_hosted_qa}, '#{blob_name_docker_hosted_qa}', true, true, WritePolicy.ALLOW)"
-  action %i[create run delete]
-end
-
-blob_name_docker_mirror = 'docker_mirror'
-nexus3_api 'docker-mirror-blob' do
-  content "blobStore.createFileBlobStore('#{blob_name_docker_mirror}', '#{scratch_blob_store_path}/#{blob_name_docker_mirror}')"
-  action %i[create run delete]
-end
-
-# Set the docker-mirror to allow anonymous access, otherwise it won't mirror: https://issues.sonatype.org/browse/NEXUS-10813
-port_http_docker_mirror = node['nexus3']['repository']['docker']['port']['http']['mirror']
-port_https_docker_mirror = node['nexus3']['repository']['docker']['port']['https']['mirror']
-groovy_docker_mirror_content = <<~GROOVY
-  import org.sonatype.nexus.repository.config.Configuration;
-  configuration = new Configuration(
-      repositoryName: 'hub.docker.io',
-      recipeName: 'docker-proxy',
-      online: true,
-      attributes: [
-          docker: [
-              forceBasicAuth: false,
-              httpPort: #{port_http_docker_mirror},
-              httpsPort: #{port_https_docker_mirror},
-              v1Enabled: true
-          ],
-          proxy: [
-              remoteUrl: 'https://registry-1.docker.io'
-          ],
-          dockerProxy: [
-              indexType: 'HUB'
-          ],
-          storage: [
-              writePolicy: 'ALLOW_ONCE',
-              blobStoreName: '#{blob_name_docker_mirror}',
-              strictContentTypeValidation: true
-          ]
-      ]
-  );
-
-  repository.getRepositoryManager().create(configuration);
-GROOVY
-nexus3_api 'docker-mirror' do
-  content groovy_docker_mirror_content
-  action %i[create run delete]
-end
-
-# enable the Docker Bearer Token realm
-nexus3_api 'docker-bearer-token' do
-  content 'import org.sonatype.nexus.security.realm.RealmManager;' \
-  'realmManager = container.lookup(RealmManager.class.getName());' \
-  "realmManager.enableRealm('DockerToken', true);"
-  action %i[create run delete]
-end
-
-#
-# ADD THE NPM REPOSITORIES
-#
-# See: https://github.com/sonatype/nexus-public/blob/master/plugins/nexus-script-plugin/src/main/java/org/sonatype/nexus/script/plugin/RepositoryApi.java
-
-blob_name_npm_hosted_production = 'npm_production'
-nexus3_api 'npm-production-blob' do
-  content "blobStore.createFileBlobStore('#{blob_name_npm_hosted_production}', '#{npm_blob_store_path}/#{blob_name_npm_hosted_production}')"
-  action %i[create run delete]
-end
-
-nexus3_api 'npm-production' do
-  content "import org.sonatype.nexus.repository.storage.WritePolicy; repository.createNpmHosted('npm-production', '#{blob_name_npm_hosted_production}', true, WritePolicy.ALLOW_ONCE)"
-  action %i[create run delete]
-end
-
-blob_name_npm_hosted_qa = 'npm_qa'
-nexus3_api 'npm-qa-blob' do
-  content "blobStore.createFileBlobStore('#{blob_name_npm_hosted_qa}', '#{npm_blob_store_path}/#{blob_name_npm_hosted_qa}')"
-  action %i[create run delete]
-end
-
-nexus3_api 'npm-qa' do
-  content "import org.sonatype.nexus.repository.storage.WritePolicy; repository.createNpmHosted('npm-qa', '#{blob_name_npm_hosted_qa}', true, WritePolicy.ALLOW)"
-  action %i[create run delete]
-end
-
-blob_name_npm_mirror = 'npm_mirror'
-nexus3_api 'npm-mirror-blob' do
-  content "blobStore.createFileBlobStore('#{blob_name_npm_mirror}', '#{scratch_blob_store_path}/#{blob_name_npm_mirror}')"
-  action %i[create run delete]
-end
-
-nexus3_api 'npm-mirror' do
-  content "repository.createNpmProxy('npmjs.org','https://www.npmjs.org/', '#{blob_name_npm_mirror}', true)"
-  action %i[create run delete]
-end
-
-# enable the NPM Bearer Token realm
-nexus3_api 'npm-bearer-token' do
-  content 'import org.sonatype.nexus.security.realm.RealmManager;' \
-  'realmManager = container.lookup(RealmManager.class.getName());' \
-  "realmManager.enableRealm('NpmToken', true);"
-  action %i[create run delete]
-end
-
-#
-# ADD THE NUGET REPOSITORIES
-#
-# See: https://github.com/sonatype/nexus-public/blob/master/plugins/nexus-script-plugin/src/main/java/org/sonatype/nexus/script/plugin/RepositoryApi.java
-
-blob_name_nuget_hosted = 'nuget_hosted'
-nexus3_api 'nuget-hosted-blob' do
-  content "blobStore.createFileBlobStore('#{blob_name_nuget_hosted}', '#{nuget_blob_store_path}/#{blob_name_nuget_hosted}')"
-  action %i[create run delete]
-end
-
-# create and run rubygems hosted, proxy and group repositories
-nexus3_api 'nuget-hosted' do
-  content "import org.sonatype.nexus.repository.storage.WritePolicy; repository.createNugetHosted('nuget', '#{blob_name_nuget_hosted}', true, WritePolicy.ALLOW_ONCE)"
-  action %i[create run delete]
-end
-
-blob_name_nuget_mirror = 'nuget_mirror'
-nexus3_api 'nuget-mirror-blob' do
-  content "blobStore.createFileBlobStore('#{blob_name_nuget_mirror}', '#{scratch_blob_store_path}/#{blob_name_nuget_mirror}')"
-  action %i[create run delete]
-end
-
-nexus3_api 'nuget-mirror' do
-  content "repository.createNugetProxy('nuget.org','https://www.nuget.org/api/v2/', '#{blob_name_nuget_mirror}', true)"
-  action %i[create run delete]
-end
-
-# enable the NuGet API-key realm
-nexus3_api 'nuget-api-key' do
-  content 'import org.sonatype.nexus.security.realm.RealmManager;' \
-  'realmManager = container.lookup(RealmManager.class.getName());' \
-  "realmManager.enableRealm('NuGetApiKey', true);"
-  action %i[create run delete]
-end
-
-#
-# ADD THE RUBY GEM REPOSITORIES
-#
-# See: https://github.com/sonatype/nexus-public/blob/master/plugins/nexus-script-plugin/src/main/java/org/sonatype/nexus/script/plugin/RepositoryApi.java
-
-blob_name_gems_mirror = 'gems_mirror'
-nexus3_api 'gems-mirror-blob' do
-  content "blobStore.createFileBlobStore('#{blob_name_gems_mirror}', '#{scratch_blob_store_path}/#{blob_name_gems_mirror}')"
-  action %i[create run delete]
-end
-
-nexus3_api 'gems-mirror' do
-  content "repository.createRubygemsProxy('rubygems.org','https://rubygems.org', '#{blob_name_gems_mirror}', true)"
-  action %i[create run delete]
-end
-
-#
 # ENABLE LDAP TOKEN REALM
 #
 
@@ -271,60 +87,6 @@ nexus3_api 'ldap-realm' do
   'realmManager = container.lookup(RealmManager.class.getName());' \
   "realmManager.enableRealm('LdapRealm', true);"
   action %i[create run delete]
-end
-
-#
-# ALLOW NEXUS THROUGH THE FIREWALL
-#
-
-nexus_management_port = node['nexus3']['port']
-firewall_rule 'nexus-http' do
-  command :allow
-  description 'Allow Nexus HTTP traffic'
-  dest_port nexus_management_port
-  direction :in
-end
-
-firewall_rule 'nexus-docker-production-http' do
-  command :allow
-  description 'Allow Docker HTTP traffic'
-  dest_port port_http_docker_hosted_production
-  direction :in
-end
-
-firewall_rule 'nexus-docker-production-https' do
-  command :allow
-  description 'Allow Docker HTTPs traffic'
-  dest_port port_https_docker_hosted_production
-  direction :in
-end
-
-firewall_rule 'nexus-docker-qa-http' do
-  command :allow
-  description 'Allow Docker HTTP traffic'
-  dest_port port_http_docker_hosted_qa
-  direction :in
-end
-
-firewall_rule 'nexus-docker-qa-https' do
-  command :allow
-  description 'Allow Docker HTTPs traffic'
-  dest_port port_https_docker_hosted_qa
-  direction :in
-end
-
-firewall_rule 'nexus-docker-mirror-http' do
-  command :allow
-  description 'Allow Docker HTTP traffic'
-  dest_port port_http_docker_mirror
-  direction :in
-end
-
-firewall_rule 'nexus-docker-mirror-https' do
-  command :allow
-  description 'Allow Docker HTTPs traffic'
-  dest_port port_https_docker_mirror
-  direction :in
 end
 
 #
@@ -377,385 +139,9 @@ file '/etc/consul/conf.d/nexus-management.json' do
   JSON
 end
 
-file '/etc/consul/conf.d/nexus-docker-production.json' do
-  action :create
-  content <<~JSON
-    {
-      "services": [
-        {
-          "checks": [
-            {
-              "header": { "Authorization" : ["Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo"]},
-              "http": "http://localhost:#{nexus_management_port}#{nexus_proxy_path}/service/metrics/ping",
-              "id": "nexus_docker_production_api_ping",
-              "interval": "15s",
-              "method": "GET",
-              "name": "Nexus Docker production repository ping",
-              "timeout": "5s"
-            }
-          ],
-          "enableTagOverride": true,
-          "id": "nexus_docker_production_api",
-          "name": "artefacts",
-          "port": #{port_http_docker_hosted_production},
-          "tags": [
-            "read-production-docker",
-            "write-production-docker"
-          ]
-        }
-      ]
-    }
-  JSON
-end
-
-file '/etc/consul/conf.d/nexus-docker-qa.json' do
-  action :create
-  content <<~JSON
-    {
-      "services": [
-        {
-          "checks": [
-            {
-              "header": { "Authorization" : ["Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo"]},
-              "http": "http://localhost:#{nexus_management_port}#{nexus_proxy_path}/service/metrics/ping",
-              "id": "nexus_docker_qa_api_ping",
-              "interval": "15s",
-              "method": "GET",
-              "name": "Nexus Docker QA repository ping",
-              "timeout": "5s"
-            }
-          ],
-          "enableTagOverride": true,
-          "id": "nexus_docker_qa_api",
-          "name": "artefacts",
-          "port": #{port_http_docker_hosted_qa},
-          "tags": [
-            "read-qa-docker",
-            "write-qa-docker"
-          ]
-        }
-      ]
-    }
-  JSON
-end
-
-file '/etc/consul/conf.d/nexus-docker-mirror.json' do
-  action :create
-  content <<~JSON
-    {
-      "services": [
-        {
-          "checks": [
-            {
-              "header": { "Authorization" : ["Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo"]},
-              "http": "http://localhost:#{nexus_management_port}#{nexus_proxy_path}/service/metrics/ping",
-              "id": "nexus_docker_mirror_api_ping",
-              "interval": "15s",
-              "method": "GET",
-              "name": "Nexus Docker mirror repository ping",
-              "timeout": "5s"
-            }
-          ],
-          "enableTagOverride": true,
-          "id": "nexus_docker_mirror_api",
-          "name": "artefacts",
-          "port": #{port_http_docker_mirror},
-          "tags": [
-            "read-mirror-docker"
-          ]
-        }
-      ]
-    }
-  JSON
-end
-
-file '/etc/consul/conf.d/nexus-npm-production.json' do
-  action :create
-  content <<~JSON
-    {
-      "services": [
-        {
-          "checks": [
-            {
-              "header": { "Authorization" : ["Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo"]},
-              "http": "http://localhost:#{nexus_management_port}#{nexus_proxy_path}/service/metrics/ping",
-              "id": "nexus_npm_production_api_ping",
-              "interval": "15s",
-              "method": "GET",
-              "name": "Nexus NPM production repository ping",
-              "timeout": "5s"
-            }
-          ],
-          "enableTagOverride": true,
-          "id": "nexus_npm_production_api",
-          "name": "artefacts",
-          "port": #{nexus_management_port},
-          "tags": [
-            "read-production-npm",
-            "write-production-npm"
-          ]
-        }
-      ]
-    }
-  JSON
-end
-
-file '/etc/consul/conf.d/nexus-npm-qa.json' do
-  action :create
-  content <<~JSON
-    {
-      "services": [
-        {
-          "checks": [
-            {
-              "header": { "Authorization" : ["Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo"]},
-              "http": "http://localhost:#{nexus_management_port}#{nexus_proxy_path}/service/metrics/ping",
-              "id": "nexus_npm_qa_api_ping",
-              "interval": "15s",
-              "method": "GET",
-              "name": "Nexus NPM QA repository ping",
-              "timeout": "5s"
-            }
-          ],
-          "enableTagOverride": true,
-          "id": "nexus_npm_qa_api",
-          "name": "artefacts",
-          "port": #{nexus_management_port},
-          "tags": [
-            "read-qa-npm",
-            "write-qa-npm"
-          ]
-        }
-      ]
-    }
-  JSON
-end
-
-file '/etc/consul/conf.d/nexus-npm-mirror.json' do
-  action :create
-  content <<~JSON
-    {
-      "services": [
-        {
-          "checks": [
-            {
-              "header": { "Authorization" : ["Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo"]},
-              "http": "http://localhost:#{nexus_management_port}#{nexus_proxy_path}/service/metrics/ping",
-              "id": "nexus_npm_mirror_api_ping",
-              "interval": "15s",
-              "method": "GET",
-              "name": "Nexus NPM mirror repository ping",
-              "timeout": "5s"
-            }
-          ],
-          "enableTagOverride": true,
-          "id": "nexus_npm_mirror_api",
-          "name": "artefacts",
-          "port": #{nexus_management_port},
-          "tags": [
-            "read-mirror-npm"
-          ]
-        }
-      ]
-    }
-  JSON
-end
-
-file '/etc/consul/conf.d/nexus-nuget-production.json' do
-  action :create
-  content <<~JSON
-    {
-      "services": [
-        {
-          "checks": [
-            {
-              "header": { "Authorization" : ["Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo"]},
-              "http": "http://localhost:#{nexus_management_port}#{nexus_proxy_path}/service/metrics/ping",
-              "id": "nexus_nuget_production_api_ping",
-              "interval": "15s",
-              "method": "GET",
-              "name": "Nexus NuGet production repository ping",
-              "timeout": "5s"
-            }
-          ],
-          "enableTagOverride": true,
-          "id": "nexus_nuget_production_api",
-          "name": "artefacts",
-          "port": #{nexus_management_port},
-          "tags": [
-            "read-production-nuget",
-            "write-production-nuget"
-          ]
-        }
-      ]
-    }
-  JSON
-end
-
-file '/etc/consul/conf.d/nexus-nuget-mirror.json' do
-  action :create
-  content <<~JSON
-    {
-      "services": [
-        {
-          "checks": [
-            {
-              "header": { "Authorization" : ["Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo"]},
-              "http": "http://localhost:#{nexus_management_port}#{nexus_proxy_path}/service/metrics/ping",
-              "id": "nexus_nuget_mirror_api_ping",
-              "interval": "15s",
-              "method": "GET",
-              "name": "Nexus NuGet mirror repository ping",
-              "timeout": "5s"
-            }
-          ],
-          "enableTagOverride": true,
-          "id": "nexus_nuget_mirror_api",
-          "name": "artefacts",
-          "port": #{nexus_management_port},
-          "tags": [
-            "read-mirror-nuget"
-          ]
-        }
-      ]
-    }
-  JSON
-end
-
-file '/etc/consul/conf.d/nexus-gems-mirror.json' do
-  action :create
-  content <<~JSON
-    {
-      "services": [
-        {
-          "checks": [
-            {
-              "header": { "Authorization" : ["Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo"]},
-              "http": "http://localhost:#{nexus_management_port}#{nexus_proxy_path}/service/metrics/ping",
-              "id": "nexus_gems_mirror_api_ping",
-              "interval": "15s",
-              "method": "GET",
-              "name": "Nexus Ruby Gems mirror repository ping",
-              "timeout": "5s"
-            }
-          ],
-          "enableTagOverride": true,
-          "id": "nexus_gems_mirror_api",
-          "name": "artefacts",
-          "port": #{nexus_management_port},
-          "tags": [
-            "read-mirror-gems"
-          ]
-        }
-      ]
-    }
-  JSON
-end
-
 #
 # CREATE ADDITIONAL ROLES AND USERS
 #
-
-# Create the role which is used by the infrastructure for pulling docker containers
-nexus3_api 'role-docker-pull' do
-  content "security.addRole('nx-infrastructure-container-pull', 'nx-infrastructure-container-pull'," \
-    " 'User with privileges to allow pulling containers from the different container repositories'," \
-    " ['nx-repository-view-docker-production-browse', 'nx-repository-view-docker-production-read'], [''])"
-  action :run
-end
-
-nexus3_api 'userNomad' do
-  action :run
-  content "security.addUser('nomad.container.pull', 'Nomad', 'Container.Pull', 'nomad.container.pull@example.com', true, 'nomad.container.pull', ['nx-infrastructure-container-pull'])"
-end
-
-# Create the role which is used by the build system for pulling docker containers
-nexus3_api 'role-builds-pull-containers' do
-  content "security.addRole('nx-builds-pull-containers', 'nx-builds-pull-containers'," \
-    " 'User with privileges to allow pulling containers from the different container repositories'," \
-    " ['nx-repository-view-docker-*-browse', 'nx-repository-view-docker-*-read'], [''])"
-  action :run
-end
-
-# Create the role which is used by the build system for pushing docker containers
-nexus3_api 'role-builds-push-containers' do
-  content "security.addRole('nx-builds-push-containers', 'nx-builds-push-containers'," \
-    " 'User with privileges to allow pushing containers to the different container repositories'," \
-    " ['nx-repository-view-docker-*-browse', 'nx-repository-view-docker-*-read', 'nx-repository-view-docker-*-add', 'nx-repository-view-docker-*-edit'], [''])"
-  action :run
-end
-
-# Create the role which is used by the build system for pulling npm packages
-nexus3_api 'role-builds-pull-npm' do
-  content "security.addRole('nx-builds-pull-npm', 'nx-builds-pull-npm'," \
-    " 'User with privileges to allow pulling packages from the different npm repositories'," \
-    " ['nx-repository-view-npm-*-browse', 'nx-repository-view-npm-*-read'], [''])"
-  action :run
-end
-
-# Create the role which is used by the build system for pushing nuget packages
-nexus3_api 'role-builds-push-npm' do
-  content "security.addRole('nx-builds-push-npm', 'nx-builds-push-npm'," \
-    " 'User with privileges to allow pushing packages to the different npm repositories'," \
-    " ['nx-repository-view-npm-*-browse', 'nx-repository-view-npm-*-read', 'nx-repository-view-npm-*-add', 'nx-repository-view-npm-*-edit'], [''])"
-  action :run
-end
-
-# Create the role which is used by the build system for pulling nuget packages
-nexus3_api 'role-builds-pull-nuget' do
-  content "security.addRole('nx-builds-pull-nuget', 'nx-builds-pull-nuget'," \
-    " 'User with privileges to allow pulling packages from the different nuget repositories'," \
-    " ['nx-repository-view-nuget-*-browse', 'nx-repository-view-nuget-*-read'], [''])"
-  action :run
-end
-
-# Create the role which is used by the build system for pushing nuget packages
-nexus3_api 'role-builds-push-nuget' do
-  content "security.addRole('nx-builds-push-nuget', 'nx-builds-push-nuget'," \
-    " 'User with privileges to allow pushing packages to the different nuget repositories'," \
-    " ['nx-repository-view-nuget-*-browse', 'nx-repository-view-nuget-*-read', 'nx-repository-view-nuget-*-add', 'nx-repository-view-nuget-*-edit'], [''])"
-  action :run
-end
-
-# Create the role which is used by the build system for pulling ruby gems packages
-nexus3_api 'role-builds-pull-rubygems' do
-  content "security.addRole('nx-builds-pull-rubygems', 'nx-builds-pull-rubygems'," \
-    " 'User with privileges to allow pulling packages from the different rubygems repositories'," \
-    " ['nx-repository-view-rubygems-*-browse', 'nx-repository-view-rubygems-*-read'], [''])"
-  action :run
-end
-
-# Create the role which is used by the developers to read docker repositories
-nexus3_api 'role-developer-docker' do
-  content "security.addRole('nx-developer-docker', 'nx-developer-docker'," \
-    " 'User with privileges to allow pulling containers from the docker repositories'," \
-    " ['nx-repository-view-docker-*-browse', 'nx-repository-view-docker-*-read'], [''])"
-  action :run
-end
-
-# Create the role which is used by the developers to read npm repositories
-nexus3_api 'role-developer-npm' do
-  content "security.addRole('nx-developer-npm', 'nx-developer-npm'," \
-    " 'User with privileges to allow pulling packages from the npm repositories'," \
-    " ['nx-repository-view-npm-*-browse', 'nx-repository-view-npm-*-read'], [''])"
-  action :run
-end
-
-# Create the role which is used by the developers to read nuget repositories
-nexus3_api 'role-developer-nuget' do
-  content "security.addRole('nx-developer-nuget', 'nx-developer-nuget'," \
-    " 'User with privileges to allow pulling packages from the nuget repositories'," \
-    " ['nx-repository-view-nuget-*-browse', 'nx-repository-view-nuget-*-read'], [''])"
-  action :run
-end
-
-# Create the role which is used by the developers to read gems repositories
-nexus3_api 'role-developer-rubygems' do
-  content "security.addRole('nx-developer-rubygems', 'nx-developer-rubygems'," \
-    " 'User with privileges to allow pulling packages from the ruby gems repositories'," \
-    " ['nx-repository-view-rubygems-*-browse', 'nx-repository-view-rubygems-*-read'], [''])"
-  action :run
-end
 
 # Create the role which is used by the developers to search repositories
 nexus3_api 'role-developer-search' do
@@ -763,6 +149,20 @@ nexus3_api 'role-developer-search' do
     " 'User with privileges to allow searching for packages in the different repositories'," \
     " ['nx-search-read', 'nx-selectors-read'], [''])"
   action :run
+end
+
+nexus3_api 'role-consul-template-local' do
+  content "security.addRole('role-consul-template-local', 'role-consul-template-local'," \
+    " 'User with privileges required for Consul-Template to configure Nexus'," \
+    " ['nx-ldap-all', 'nx-script-*-*'], [''])"
+  action :run
+end
+
+ldap_config_username = node['nexus3']['user']['ldap_config']['username']
+ldap_config_password = node['nexus3']['user']['ldap_config']['password']
+nexus3_api 'user-consul-template' do
+  action :run
+  content "security.addUser('#{ldap_config_username}', 'Consul', 'Template', 'consul.template@localhost.example.com', true, '#{ldap_config_password}', ['role-consul-template-local'])"
 end
 
 #
@@ -776,47 +176,195 @@ nexus3_api 'anonymous' do
 end
 
 #
-# UPDATE THE SERVICE
+# CONSUL-TEMPLATE
 #
 
-# Make sure the nexus service doesn't start automatically. This will be changed
-# after we have provisioned the box
-service 'nexus' do
-  action :disable
+consul_template_config_path = node['consul_template']['config_path']
+consul_template_template_path = node['consul_template']['template_path']
+
+nexus_ldap_script_template_file = node['nexus3']['consul_template_ldap_script_file']
+file "#{consul_template_template_path}/#{nexus_ldap_script_template_file}" do
+  action :create
+  content <<~CONF
+    #!/bin/sh
+
+    {{ if keyExists "config/environment/directory/initialized" }}
+
+    run_nexus_script() {
+      name=$1
+      file=$2
+      host=$3
+      username=$4
+      password=$5
+
+      content=$(tr -d '\n' < $file)
+      cat <<EOT > "/tmp/$name.json"
+    {
+      "name": "$name",
+      "type": "groovy",
+      "content": "$content"
+    }
+    EOT
+      curl -v -X POST -u "$username:$password" --header "Content-Type: application/json" "$host#{nexus_proxy_path}/service/rest/v1/script" -d @"/tmp/$name.json"
+      echo "Published $file as $name"
+
+      curl -v -X POST -u "$username:$password" --header "Content-Type: text/plain" "$host#{nexus_proxy_path}/service/rest/v1/script/$name/run"
+      echo "Successfully executed $name script"
+
+      curl -v -X DELETE -u "$username:$password" "$host#{nexus_proxy_path}/service/rest/v1/script/$name"
+      echo "Deleted script $name"
+    }
+
+    echo 'Write the script to configure LDAP in Nexus'
+    cat <<EOT > /tmp/nexus_ldap.groovy
+    import org.sonatype.nexus.ldap.persist.*;
+    import org.sonatype.nexus.ldap.persist.entity.*;
+    import org.sonatype.nexus.security.SecuritySystem;
+
+    def manager = container.lookup(LdapConfigurationManager.class.name);
+
+    manager.addLdapServerConfiguration(
+      new LdapConfiguration(
+        name: '{{ key "/config/environment/directory/name" }}',
+        connection: new Connection(
+          host: new Connection.Host(Connection.Protocol.ldap, '{{ key "config/environment/directory/endpoints/mainhost" }}', 389),
+          maxIncidentsCount: 3,
+          connectionRetryDelay: 300,
+          connectionTimeout: 15,
+          searchBase: '{{ key "/config/environment/directory/query/lookupbase" }}',
+          authScheme: 'simple',
+    {{ with secret "secret/environment/directory/users/bind" }}
+      {{ if .Data.password }}
+          systemPassword: '{{ .Data.password }}',
+      {{ end }}
+    {{ end }}
+          systemUsername: '{{ key "/config/environment/directory/users/bindcn" }}'
+        ),
+        mapping: new Mapping(
+          emailAddressAttribute: 'mail',
+          ldapFilter: '{{ key "/config/environment/directory/filter/users/getuser" }}',
+          ldapGroupsAsRoles: true,
+          userBaseDn: '',
+          userIdAttribute: 'sAMAccountName',
+          userMemberOfAttribute: 'memberOf',
+          userObjectClass: 'user',
+          userPasswordAttribute: '',
+          userRealNameAttribute: 'cn',
+          userSubtree: true
+        )
+      )
+    );
+
+    def role = security.addRole(
+      '{{ key "config/environment/directory/query/groups/artefacts/administrators" }}',
+      'ldap-administrators',
+      'Mapping {{ key "config/environment/directory/query/groups/artefacts/administrators" }} to nx-admin for {{ key "/config/environment/directory/name" }}',
+      [],
+      ['nx-admin']);
+
+    security.securitySystem.deleteUser('admin', 'default');
+    EOT
+
+    if ( ! $(systemctl is-enabled --quiet #{nexus_instance_name}) ); then
+      systemctl enable #{nexus_instance_name}
+
+      while true; do
+        if ( $(systemctl is-enabled --quiet #{nexus_instance_name}) ); then
+            break
+        fi
+
+        sleep 1
+      done
+    fi
+
+    if ( ! $(systemctl is-active --quiet #{nexus_instance_name}) ); then
+      systemctl start #{nexus_instance_name}
+
+      while true; do
+        if ( $(systemctl is-active --quiet #{nexus_instance_name}) ); then
+            break
+        fi
+
+        sleep 1
+      done
+    fi
+
+    run_nexus_script setLdap /tmp/nexus_ldap.groovy 'http://localhost:#{nexus_management_port}' '#{ldap_config_username}' '#{ldap_config_password}'
+
+    {{ else }}
+    echo 'The LDAP information is not available in the Consul K-V. Will not update Nexus.'
+    {{ end }}
+  CONF
+  mode '755'
 end
 
-# Update the systemd service configuration for Nexus so that we can set
-# the number of file handles for the given user
-# See here: https://help.sonatype.com/display/NXRM3/System+Requirements#filehandles
-systemd_service 'nexus' do
+nexus_ldap_script_file = node['nexus3']['script_ldap_file']
+file "#{consul_template_config_path}/nexus_ldap.hcl" do
   action :create
-  after %w[network.target]
-  description 'nexus service'
-  install do
-    wanted_by %w[multi-user.target]
-  end
-  service do
-    exec_start '/opt/nexus/bin/nexus start'
-    exec_stop '/opt/nexus/bin/nexus stop'
-    limit_nofile 65_536
-    restart 'on-abort'
-    type 'forking'
-    user node['nexus']['service_user']
-  end
-end
+  content <<~HCL
+    # This block defines the configuration for a template. Unlike other blocks,
+    # this block may be specified multiple times to configure multiple templates.
+    # It is also possible to configure templates via the CLI directly.
+    template {
+      # This is the source file on disk to use as the input template. This is often
+      # called the "Consul Template template". This option is required if not using
+      # the `contents` option.
+      source = "#{consul_template_template_path}/#{nexus_ldap_script_template_file}"
 
-#
-# SET THE PROXY PATH
-#
+      # This is the destination path on disk where the source template will render.
+      # If the parent directories do not exist, Consul Template will attempt to
+      # create them, unless create_dest_dirs is false.
+      destination = "#{nexus_ldap_script_file}"
 
-nexus_data_path = node['nexus3']['data']
-file "#{nexus_data_path}/etc/nexus.properties" do
-  action :create
-  content <<~PROPERTIES
-    # Jetty section
-    application-port=#{nexus_management_port}
-    application-host=0.0.0.0
-    nexus-args=${jetty.etc}/jetty.xml,${jetty.etc}/jetty-http.xml,${jetty.etc}/jetty-requestlog.xml
-    nexus-context-path=#{nexus_proxy_path}
-  PROPERTIES
+      # This options tells Consul Template to create the parent directories of the
+      # destination path if they do not exist. The default value is true.
+      create_dest_dirs = false
+
+      # This is the optional command to run when the template is rendered. The
+      # command will only run if the resulting template changes. The command must
+      # return within 30s (configurable), and it must have a successful exit code.
+      # Consul Template is not a replacement for a process monitor or init system.
+      command = "sh #{nexus_ldap_script_file}"
+
+      # This is the maximum amount of time to wait for the optional command to
+      # return. Default is 30s.
+      command_timeout = "60s"
+
+      # Exit with an error when accessing a struct or map field/key that does not
+      # exist. The default behavior will print "<no value>" when accessing a field
+      # that does not exist. It is highly recommended you set this to "true" when
+      # retrieving secrets from Vault.
+      error_on_missing_key = false
+
+      # This is the permission to render the file. If this option is left
+      # unspecified, Consul Template will attempt to match the permissions of the
+      # file that already exists at the destination path. If no file exists at that
+      # path, the permissions are 0644.
+      perms = 0755
+
+      # This option backs up the previously rendered template at the destination
+      # path before writing a new one. It keeps exactly one backup. This option is
+      # useful for preventing accidental changes to the data without having a
+      # rollback strategy.
+      backup = true
+
+      # These are the delimiters to use in the template. The default is "{{" and
+      # "}}", but for some templates, it may be easier to use a different delimiter
+      # that does not conflict with the output file itself.
+      left_delimiter  = "{{"
+      right_delimiter = "}}"
+
+      # This is the `minimum(:maximum)` to wait before rendering a new template to
+      # disk and triggering a command, separated by a colon (`:`). If the optional
+      # maximum value is omitted, it is assumed to be 4x the required minimum value.
+      # This is a numeric time with a unit suffix ("5s"). There is no default value.
+      # The wait value for a template takes precedence over any globally-configured
+      # wait.
+      wait {
+        min = "2s"
+        max = "10s"
+      }
+    }
+  HCL
+  mode '755'
 end

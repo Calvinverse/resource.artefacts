@@ -7,8 +7,8 @@
         <file src="${DirTestsIntegration}\provision\shared\consul\*.*" target="consul" />
         <file src="${DirTestsIntegration}\provision\shared\consul\client\*.*" target="consul\client" />
 
-        <file src="${DirTestsIntegration}\provision\shared\nexus\*.*" target="nexus" />
-
         <file src="${DirTestsIntegration}\provision\shared\unbound\*.*" target="unbound" />
+
+        <file src="${DirTestsIntegration}\provision\shared\*.json" target="" />
     </files>
 </iso>

@@ -57,4 +57,23 @@ Restart=on-failure
             $systemctlOutput[4] | Should Match 'Active:\sactive\s\(running\).*'
         }
     }
+
+    Context 'allows resolution of addresses' {
+        $ifConfigResponse = & ifconfig eth0
+        $line = $ifConfigResponse[1].Trim()
+        # Expecting line to be:
+        #     inet addr:192.168.6.46  Bcast:192.168.6.255  Mask:255.255.255.0
+        $localIpAddress = $line.SubString(10, ($line.IndexOf(' ', 10) - 10))
+
+        It 'should resolve www.google.com' {
+            $result = & dig +short www.google.com
+            $result | Should Not Be $null
+        }
+
+        It 'should resolve consul addresses' {
+            $result = & dig +short consul.service.integrationtest
+            $result | Should Not Be $null
+            $result | Should Be $localIpAddress
+        }
+    }
 }

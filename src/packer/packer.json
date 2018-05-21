@@ -3,16 +3,19 @@
         "admin_username": "admin",
         "admin_password": "admin",
 
+        "cookbook_name": "not_realy_a_cookbook_name",
+
         "dir_cookbooks_src": "src/cookbooks",
         "dir_cookbooks_vendors": "packages/vendor/cookbooks",
         "dir_http_user": null,
         "dir_log": null,
+        "dir_src_provisioning": "src/provisioning",
         "dir_temp": null,
         "dir_vm_import": null,
 
         "vm_import_directory": null,
         "vm_name": "not_really_a_vm_name",
-        "vm_ram_size_in_mb": "2048",
+        "vm_ram_size_in_mb": "1024",
         "vm_switch_name": "this_switch_does_not_exist"
     },
     "builders": [
@@ -46,12 +49,31 @@
     ],
     "provisioners": [
         {
-            "execute_command": "echo '{{ user `admin_password` }}' | {{ .Vars }} sudo -E -S sh '{{ .Path }}'",
+            "command": "Set-VM -Name {{ user `vm_name` }} -AutomaticCheckpointsEnabled $false",
+            "execute_command": ["Powershell.exe", "-NonInteractive", "-NoLogo", "-NoProfile", "-Command", "{{.Command}}"],
+            "type": "shell-local"
+        },
+        {
+            "command": "Get-VMSnapshot -VMName {{ user `vm_name` }} | Remove-VMSnapshot",
+            "execute_command": ["Powershell.exe", "-NonInteractive", "-NoLogo", "-NoProfile", "-Command", "{{.Command}}"],
+            "type": "shell-local"
+        },
+
+        {
+            "destination": "/tmp/unbound_zones.conf",
+            "source": "{{ user `dir_src_provisioning` }}/unbound_zones.conf",
+            "type": "file"
+        },
+        {
+            "expect_disconnect": false,
             "inline": [
-                "echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers"
+                "dos2unix /tmp/unbound_zones.conf",
+                "sudo cp -a /tmp/unbound_zones.conf /etc/unbound.d/unbound_zones.conf",
+                "sudo systemctl restart unbound"
             ],
             "type": "shell"
         },
+
         {
             "expect_disconnect": false,
             "inline": [
@@ -59,6 +81,7 @@
             ],
             "type": "shell"
         },
+
         {
             "expect_disconnect": false,
             "inline": [
@@ -89,6 +112,7 @@
             "pause_before" : "15s",
             "type": "shell"
         },
+
         {
             "expect_disconnect": false,
             "inline": [
@@ -119,6 +143,7 @@
             "pause_before" : "15s",
             "type": "shell"
         },
+
         {
             "expect_disconnect": false,
             "inline": [
@@ -149,6 +174,7 @@
             "pause_before" : "15s",
             "type": "shell"
         },
+
         {
             "command": "New-VHD -Path '{{ user `dir_temp` }}/{{ build_name }}/Virtual Hard Disks/nexus_npm.vhdx' -SizeBytes 50GB -BlockSizeBytes 1MB",
             "execute_command": ["Powershell.exe", "-NonInteractive", "-NoLogo", "-NoProfile", "-Command", "{{.Command}}"],
@@ -170,6 +196,29 @@
             "pause_before" : "15s",
             "type": "shell"
         },
+
+        {
+            "command": "New-VHD -Path '{{ user `dir_temp` }}/{{ build_name }}/Virtual Hard Disks/nexus_artefacts.vhdx' -SizeBytes 150GB -BlockSizeBytes 1MB",
+            "execute_command": ["Powershell.exe", "-NonInteractive", "-NoLogo", "-NoProfile", "-Command", "{{.Command}}"],
+            "type": "shell-local"
+        },
+        {
+            "command": "Add-VmHardDiskDrive -VMName {{ user `vm_name` }} -Path '{{ user `dir_temp` }}/{{build_name}}/Virtual Hard Disks/nexus_artefacts.vhdx'",
+            "execute_command": ["Powershell.exe", "-NonInteractive", "-NoLogo", "-NoProfile", "-Command", "{{.Command}}"],
+            "type": "shell-local"
+        },
+        {
+            "expect_disconnect": false,
+            "inline": [
+                "sudo rescan-scsi-bus.sh --remove --issue-lip",
+                "sudo mkdir -p /srv/nexus/blob/artefacts",
+                "sudo mkfs.ext4 /dev/sdf",
+                "echo \"UUID=$(sudo blkid -s UUID -o value /dev/sdf) /srv/nexus/blob/artefacts ext4 defaults 0 0 \" | sudo tee -a /etc/fstab"
+            ],
+            "pause_before" : "15s",
+            "type": "shell"
+        },
+
         {
             "expect_disconnect": true,
             "inline": [
@@ -178,23 +227,43 @@
             "type": "shell"
         },
         {
-            "expect_disconnect": true,
+            "expect_disconnect": false,
             "inline": [
-                "sudo -S -E apt-get install --assume-yes curl"
+                "echo \"System should have rebooted ...\""
+            ],
+            "pause_before" : "15s",
+            "type": "shell"
+        },
+
+        {
+            "expect_disconnect": false,
+            "inline": [
+                "sudo lsblk -o NAME,FSTYPE,SIZE,MOUNTPOINT,LABEL",
+                "sudo fdisk -l",
+                "sudo blkid -s UUID -o value /dev/sda"
             ],
             "type": "shell"
         },
+
         {
             "cookbook_paths": [
                 "{{ user `dir_cookbooks_vendors` }}"
             ],
             "execute_command": "sudo chef-solo --no-color -c {{.ConfigPath}} -j {{.JsonPath}}",
             "guest_os_type": "unix",
-            "install_command": "curl -LO https://omnitruck.chef.io/install.sh && {{if .Sudo}}sudo{{end}} bash ./install.sh -v 13.5.3 && rm install.sh",
+            "install_command": "echo \"Do nothing because chef should already be installed\"",
             "run_list": [
-                "resource_artefacts::default"
+                "{{ user `cookbook_name` }}::default"
             ],
             "type": "chef-solo"
+        },
+        {
+            "expect_disconnect": false,
+            "inline": [
+                "sudo dpkg -P chef",
+                "sudo rm -rf /etc/unbound.d/unbound_zones"
+            ],
+            "type": "shell"
         },
         {
             "type": "file",

@@ -2,16 +2,19 @@
     "admin_username": "${LocalAdministratorName}",
     "admin_password": "${LocalAdministratorPassword}",
 
+    "cookbook_name": "${NameCookbook}",
+
     "dir_cookbooks_src": "${DirSrcCookbooksJsonEscaped}",
     "dir_cookbooks_vendors": "${DirVendorCookbooksJsonEscaped}",
     "dir_http_user": "",
     "dir_log": "${DirLogsJsonEscaped}",
+    "dir_src_provisioning": "${DirSrcProvisioningJsonEscaped}",
     "dir_temp": "${DirTempJsonEscaped}",
     "dir_vm_import": "${DirTempJsonEscaped}/vm/base",
 
     "vm_import_directory": null,
     "vm_name": "${ImageName}",
-    "vm_ram_size_in_mb": "2048",
+    "vm_ram_size_in_mb": "1024",
     "vm_switch_name": "${VmSwitch}",
     "vm_switch_vlan": "${VmSwitchVlan}"
 }

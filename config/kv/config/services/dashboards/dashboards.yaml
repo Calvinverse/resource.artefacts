@@ -1,0 +1,4 @@
+config:
+  # Define the dashboard for nexus
+  - key: config/services/dashboards/metrics/provisioning/dashboards/services/service-nexus
+    file: dashboards/services/service-nexus.json
