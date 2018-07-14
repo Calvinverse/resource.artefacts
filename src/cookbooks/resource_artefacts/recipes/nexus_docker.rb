@@ -230,7 +230,7 @@ file '/etc/consul/conf.d/nexus-docker-production-read.json' do # ~FC005
               "timeout": "5s"
             }
           ],
-          "enableTagOverride": false,
+          "enable_tag_override": false,
           "id": "nexus_docker_production_read_api",
           "name": "artefacts",
           "port": #{port_http_docker_hosted_production_read},
@@ -260,7 +260,7 @@ file '/etc/consul/conf.d/nexus-docker-production-write.json' do
               "timeout": "5s"
             }
           ],
-          "enableTagOverride": false,
+          "enable_tag_override": false,
           "id": "nexus_docker_production_write_api",
           "name": "artefacts",
           "port": #{port_http_docker_hosted_production_write},
@@ -290,7 +290,7 @@ file '/etc/consul/conf.d/nexus-docker-qa-read.json' do
               "timeout": "5s"
             }
           ],
-          "enableTagOverride": false,
+          "enable_tag_override": false,
           "id": "nexus_docker_qa_read_api",
           "name": "artefacts",
           "port": #{port_http_docker_hosted_qa_read},
@@ -320,7 +320,7 @@ file '/etc/consul/conf.d/nexus-docker-qa-write.json' do
               "timeout": "5s"
             }
           ],
-          "enableTagOverride": false,
+          "enable_tag_override": false,
           "id": "nexus_docker_qa_write_api",
           "name": "artefacts",
           "port": #{port_http_docker_hosted_qa_write},

@@ -16,7 +16,7 @@
     },
     "builders": [
         {
-            "boot_wait": "30s",
+            "boot_wait": "90s",
             "boot_command": [],
             "clone_from_vmxc_path": "{{ user `dir_temp` }}/{{ user `vm_name` }}/resource",
             "communicator": "ssh",
@@ -54,7 +54,7 @@
             "inline": [
                 "echo \"Waiting for reboot after provisioning ...\""
             ],
-            "pause_before" : "30s",
+            "pause_before" : "45s",
             "type": "shell"
         },
         {

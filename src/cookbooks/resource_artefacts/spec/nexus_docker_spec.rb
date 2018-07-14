@@ -221,7 +221,7 @@ describe 'resource_artefacts::nexus_docker' do
                 "timeout": "5s"
               }
             ],
-            "enableTagOverride": false,
+            "enable_tag_override": false,
             "id": "nexus_docker_production_read_api",
             "name": "artefacts",
             "port": 5000,
@@ -252,7 +252,7 @@ describe 'resource_artefacts::nexus_docker' do
                 "timeout": "5s"
               }
             ],
-            "enableTagOverride": false,
+            "enable_tag_override": false,
             "id": "nexus_docker_production_write_api",
             "name": "artefacts",
             "port": 5002,
@@ -283,7 +283,7 @@ describe 'resource_artefacts::nexus_docker' do
                 "timeout": "5s"
               }
             ],
-            "enableTagOverride": false,
+            "enable_tag_override": false,
             "id": "nexus_docker_qa_read_api",
             "name": "artefacts",
             "port": 5010,
@@ -314,7 +314,7 @@ describe 'resource_artefacts::nexus_docker' do
                 "timeout": "5s"
               }
             ],
-            "enableTagOverride": false,
+            "enable_tag_override": false,
             "id": "nexus_docker_qa_write_api",
             "name": "artefacts",
             "port": 5012,

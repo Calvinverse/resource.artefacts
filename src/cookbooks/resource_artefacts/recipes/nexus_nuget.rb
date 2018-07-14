@@ -97,7 +97,7 @@ nexus_proxy_path = node['nexus3']['proxy_path']
                 "timeout": "5s"
               }
             ],
-            "enableTagOverride": false,
+            "enable_tag_override": false,
             "id": "nexus_nuget_production_#{repo_mode}_api",
             "name": "artefacts",
             "port": #{nexus_management_port},

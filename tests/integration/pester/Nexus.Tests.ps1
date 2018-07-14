@@ -15,20 +15,20 @@ Describe 'The Nexus artefact server' {
         }
 
         $expectedContent = @'
+[Service]
+Type = forking
+ExecStart = /opt/nexus/bin/nexus start
+ExecStop = /opt/nexus/bin/nexus stop
+Restart = on-abort
+User = nexus
+LimitNOFILE = 65536
+
 [Unit]
-Description=nexus service
-After=network.target
+Description = nexus service
+After = network.target
 
 [Install]
-WantedBy=multi-user.target
-
-[Service]
-ExecStart=/opt/nexus/bin/nexus start
-Type=forking
-User=nexus
-LimitNOFILE=65536
-ExecStop=/opt/nexus/bin/nexus stop
-Restart=on-abort
+WantedBy = multi-user.target
 
 '@
         $serviceFileContent = Get-Content $serviceConfigurationPath | Out-String

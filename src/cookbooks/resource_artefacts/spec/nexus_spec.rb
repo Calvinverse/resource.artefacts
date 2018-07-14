@@ -126,7 +126,7 @@ describe 'resource_artefacts::nexus' do
                 "timeout": "5s"
               }
             ],
-            "enableTagOverride": true,
+            "enable_tag_override": false,
             "id": "nexus_management",
             "name": "artefacts",
             "port": #{nexus_management_port},

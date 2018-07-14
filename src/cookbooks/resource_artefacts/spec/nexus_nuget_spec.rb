@@ -84,7 +84,7 @@ describe 'resource_artefacts::nexus_nuget' do
                 "timeout": "5s"
               }
             ],
-            "enableTagOverride": false,
+            "enable_tag_override": false,
             "id": "nexus_nuget_production_read_api",
             "name": "artefacts",
             "port": #{nexus_management_port},
@@ -115,7 +115,7 @@ describe 'resource_artefacts::nexus_nuget' do
                 "timeout": "5s"
               }
             ],
-            "enableTagOverride": false,
+            "enable_tag_override": false,
             "id": "nexus_nuget_production_write_api",
             "name": "artefacts",
             "port": #{nexus_management_port},

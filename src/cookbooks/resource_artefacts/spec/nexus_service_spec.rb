@@ -16,15 +16,15 @@ describe 'resource_artefacts::nexus_service' do
     it 'updates the nexus service' do
       expect(chef_run).to create_systemd_service('nexus').with(
         action: [:create],
-        after: %w[network.target],
-        description: 'nexus service',
-        wanted_by: %w[multi-user.target],
-        exec_start: '/opt/nexus/bin/nexus start',
-        exec_stop: '/opt/nexus/bin/nexus stop',
-        limit_nofile: 65_536,
-        restart: 'on-abort',
-        type: 'forking',
-        user: 'nexus'
+        unit_after: %w[network.target],
+        unit_description: 'nexus service',
+        install_wanted_by: %w[multi-user.target],
+        service_exec_start: '/opt/nexus/bin/nexus start',
+        service_exec_stop: '/opt/nexus/bin/nexus stop',
+        service_limit_nofile: 65_536,
+        service_restart: 'on-abort',
+        service_type: 'forking',
+        service_user: 'nexus'
       )
     end
   end

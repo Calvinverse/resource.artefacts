@@ -69,7 +69,7 @@ file '/etc/consul/conf.d/nexus-artefacts-production.json' do
               "timeout": "5s"
             }
           ],
-          "enableTagOverride": false,
+          "enable_tag_override": false,
           "id": "nexus_artefacts_production_api",
           "name": "artefacts",
           "port": #{nexus_management_port},
@@ -100,7 +100,7 @@ file '/etc/consul/conf.d/nexus-artefacts-qa.json' do
               "timeout": "5s"
             }
           ],
-          "enableTagOverride": false,
+          "enable_tag_override": false,
           "id": "nexus_artefacts_qa_api",
           "name": "artefacts",
           "port": #{nexus_management_port},

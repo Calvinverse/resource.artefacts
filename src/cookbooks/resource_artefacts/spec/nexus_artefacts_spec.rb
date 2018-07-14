@@ -64,7 +64,7 @@ describe 'resource_artefacts::nexus_artefacts' do
                 "timeout": "5s"
               }
             ],
-            "enableTagOverride": false,
+            "enable_tag_override": false,
             "id": "nexus_artefacts_production_api",
             "name": "artefacts",
             "port": #{nexus_management_port},
@@ -96,7 +96,7 @@ describe 'resource_artefacts::nexus_artefacts' do
                 "timeout": "5s"
               }
             ],
-            "enableTagOverride": false,
+            "enable_tag_override": false,
             "id": "nexus_artefacts_qa_api",
             "name": "artefacts",
             "port": #{nexus_management_port},
