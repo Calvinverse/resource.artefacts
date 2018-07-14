@@ -30,11 +30,13 @@
             "enable_virtualization_extensions": false,
             "generation": 2,
             "guest_additions_mode": "disable",
+            "headless": true,
             "http_directory": "{{ user `dir_http_user` }}",
             "http_port_min": 8150,
             "http_port_max": 8160,
             "output_directory": "{{ user `dir_temp` }}/{{ user `vm_name` }}",
             "ram_size": "{{ user `vm_ram_size_in_mb` }}",
+            "secure_boot_template": "MicrosoftUEFICertificateAuthority",
             "shutdown_command": "echo '{{user `admin_password`}}' | sudo -S -E shutdown -P now",
             "shutdown_timeout": "5m",
             "skip_compaction": false,
@@ -92,13 +94,13 @@
             "type": "shell"
         },
         {
-            "command": "New-VHD -Path '{{ user `dir_temp` }}/{{ build_name }}/Virtual Hard Disks/nexus_scratch.vhdx' -SizeBytes 250GB -BlockSizeBytes 1MB",
-            "execute_command": ["Powershell.exe", "-NonInteractive", "-NoLogo", "-NoProfile", "-Command", "{{.Command}}"],
-            "type": "shell-local"
-        },
-        {
-            "command": "Add-VmHardDiskDrive -VMName {{ user `vm_name` }} -Path '{{ user `dir_temp` }}/{{build_name}}/Virtual Hard Disks/nexus_scratch.vhdx'",
-            "execute_command": ["Powershell.exe", "-NonInteractive", "-NoLogo", "-NoProfile", "-Command", "{{.Command}}"],
+            "env_var_format": "$env:%s=\"%s\"; ",
+            "execute_command": ["powershell.exe", "{{.Vars}} {{.Script}}"],
+            "inline": [
+                "New-VHD -Path '{{ user `dir_temp` }}/{{ build_name }}/Virtual Hard Disks/nexus_scratch.vhdx' -SizeBytes 250GB -BlockSizeBytes 1MB",
+                "Add-VmHardDiskDrive -VMName {{ user `vm_name` }} -Path '{{ user `dir_temp` }}/{{build_name}}/Virtual Hard Disks/nexus_scratch.vhdx'"
+            ],
+            "tempfile_extension": ".ps1",
             "type": "shell-local"
         },
         {
@@ -123,13 +125,13 @@
             "type": "shell"
         },
         {
-            "command": "New-VHD -Path '{{ user `dir_temp` }}/{{ build_name }}/Virtual Hard Disks/nexus_docker.vhdx' -SizeBytes 150GB -BlockSizeBytes 1MB",
-            "execute_command": ["Powershell.exe", "-NonInteractive", "-NoLogo", "-NoProfile", "-Command", "{{.Command}}"],
-            "type": "shell-local"
-        },
-        {
-            "command": "Add-VmHardDiskDrive -VMName {{ user `vm_name` }} -Path '{{ user `dir_temp` }}/{{build_name}}/Virtual Hard Disks/nexus_docker.vhdx'",
-            "execute_command": ["Powershell.exe", "-NonInteractive", "-NoLogo", "-NoProfile", "-Command", "{{.Command}}"],
+            "env_var_format": "$env:%s=\"%s\"; ",
+            "execute_command": ["powershell.exe", "{{.Vars}} {{.Script}}"],
+            "inline": [
+                "New-VHD -Path '{{ user `dir_temp` }}/{{ build_name }}/Virtual Hard Disks/nexus_docker.vhdx' -SizeBytes 150GB -BlockSizeBytes 1MB",
+                "Add-VmHardDiskDrive -VMName {{ user `vm_name` }} -Path '{{ user `dir_temp` }}/{{build_name}}/Virtual Hard Disks/nexus_docker.vhdx'"
+            ],
+            "tempfile_extension": ".ps1",
             "type": "shell-local"
         },
         {
@@ -154,13 +156,13 @@
             "type": "shell"
         },
         {
-            "command": "New-VHD -Path '{{ user `dir_temp` }}/{{ build_name }}/Virtual Hard Disks/nexus_nuget.vhdx' -SizeBytes 50GB -BlockSizeBytes 1MB",
-            "execute_command": ["Powershell.exe", "-NonInteractive", "-NoLogo", "-NoProfile", "-Command", "{{.Command}}"],
-            "type": "shell-local"
-        },
-        {
-            "command": "Add-VmHardDiskDrive -VMName {{ user `vm_name` }} -Path '{{ user `dir_temp` }}/{{build_name}}/Virtual Hard Disks/nexus_nuget.vhdx'",
-            "execute_command": ["Powershell.exe", "-NonInteractive", "-NoLogo", "-NoProfile", "-Command", "{{.Command}}"],
+            "env_var_format": "$env:%s=\"%s\"; ",
+            "execute_command": ["powershell.exe", "{{.Vars}} {{.Script}}"],
+            "inline": [
+                "New-VHD -Path '{{ user `dir_temp` }}/{{ build_name }}/Virtual Hard Disks/nexus_nuget.vhdx' -SizeBytes 50GB -BlockSizeBytes 1MB",
+                "Add-VmHardDiskDrive -VMName {{ user `vm_name` }} -Path '{{ user `dir_temp` }}/{{build_name}}/Virtual Hard Disks/nexus_nuget.vhdx'"
+            ],
+            "tempfile_extension": ".ps1",
             "type": "shell-local"
         },
         {
@@ -176,13 +178,13 @@
         },
 
         {
-            "command": "New-VHD -Path '{{ user `dir_temp` }}/{{ build_name }}/Virtual Hard Disks/nexus_npm.vhdx' -SizeBytes 50GB -BlockSizeBytes 1MB",
-            "execute_command": ["Powershell.exe", "-NonInteractive", "-NoLogo", "-NoProfile", "-Command", "{{.Command}}"],
-            "type": "shell-local"
-        },
-        {
-            "command": "Add-VmHardDiskDrive -VMName {{ user `vm_name` }} -Path '{{ user `dir_temp` }}/{{build_name}}/Virtual Hard Disks/nexus_npm.vhdx'",
-            "execute_command": ["Powershell.exe", "-NonInteractive", "-NoLogo", "-NoProfile", "-Command", "{{.Command}}"],
+            "env_var_format": "$env:%s=\"%s\"; ",
+            "execute_command": ["powershell.exe", "{{.Vars}} {{.Script}}"],
+            "inline": [
+                "New-VHD -Path '{{ user `dir_temp` }}/{{ build_name }}/Virtual Hard Disks/nexus_npm.vhdx' -SizeBytes 50GB -BlockSizeBytes 1MB",
+                "Add-VmHardDiskDrive -VMName {{ user `vm_name` }} -Path '{{ user `dir_temp` }}/{{build_name}}/Virtual Hard Disks/nexus_npm.vhdx'"
+            ],
+            "tempfile_extension": ".ps1",
             "type": "shell-local"
         },
         {
@@ -198,13 +200,13 @@
         },
 
         {
-            "command": "New-VHD -Path '{{ user `dir_temp` }}/{{ build_name }}/Virtual Hard Disks/nexus_artefacts.vhdx' -SizeBytes 150GB -BlockSizeBytes 1MB",
-            "execute_command": ["Powershell.exe", "-NonInteractive", "-NoLogo", "-NoProfile", "-Command", "{{.Command}}"],
-            "type": "shell-local"
-        },
-        {
-            "command": "Add-VmHardDiskDrive -VMName {{ user `vm_name` }} -Path '{{ user `dir_temp` }}/{{build_name}}/Virtual Hard Disks/nexus_artefacts.vhdx'",
-            "execute_command": ["Powershell.exe", "-NonInteractive", "-NoLogo", "-NoProfile", "-Command", "{{.Command}}"],
+            "env_var_format": "$env:%s=\"%s\"; ",
+            "execute_command": ["powershell.exe", "{{.Vars}} {{.Script}}"],
+            "inline": [
+                "New-VHD -Path '{{ user `dir_temp` }}/{{ build_name }}/Virtual Hard Disks/nexus_artefacts.vhdx' -SizeBytes 150GB -BlockSizeBytes 1MB",
+                "Add-VmHardDiskDrive -VMName {{ user `vm_name` }} -Path '{{ user `dir_temp` }}/{{build_name}}/Virtual Hard Disks/nexus_artefacts.vhdx'"
+            ],
+            "tempfile_extension": ".ps1",
             "type": "shell-local"
         },
         {

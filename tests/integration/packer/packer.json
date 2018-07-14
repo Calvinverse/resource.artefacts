@@ -18,7 +18,7 @@
         {
             "boot_wait": "30s",
             "boot_command": [],
-            "clone_from_vmxc_path": "{{ user `dir_temp` }}/{{ user `vm_name` }}",
+            "clone_from_vmxc_path": "{{ user `dir_temp` }}/{{ user `vm_name` }}/resource",
             "communicator": "ssh",
             "enable_dynamic_memory": false,
             "enable_mac_spoofing": false,
@@ -26,6 +26,7 @@
             "enable_virtualization_extensions": false,
             "generation": 2,
             "guest_additions_mode": "disable",
+            "headless": true,
             "http_directory": "{{ user `dir_http_user` }}",
             "http_port_min": 8150,
             "http_port_max": 8160,
@@ -34,6 +35,7 @@
             "secondary_iso_images": [
                 "{{ user `dir_deploy` }}/{{ user `product_name` }}-test-provision.iso"
             ],
+            "secure_boot_template": "MicrosoftUEFICertificateAuthority",
             "shutdown_command": "echo '{{user `admin_password`}}' | sudo -S -E shutdown -P now",
             "shutdown_timeout": "5m",
             "skip_compaction": true,
