@@ -52,7 +52,7 @@ default['jolokia']['url']['jar'] = "http://search.maven.org/remotecontent?filepa
 # NEXUS
 #
 
-default['nexus3']['version'] = '3.11.0-01'
+default['nexus3']['version'] = '3.12.1-01'
 default['nexus3']['path'] = '/opt'
 default['nexus3']['data'] = '/home/nexus'
 default['nexus3']['home'] = '/opt/nexus'

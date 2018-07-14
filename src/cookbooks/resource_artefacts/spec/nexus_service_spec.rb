@@ -51,8 +51,8 @@ describe 'resource_artefacts::nexus_service' do
       -Dkaraf.startLocalConsole=false
       -javaagent:/usr/local/jolokia/jolokia.jar=protocol=http,host=127.0.0.1,port=8090,discoveryEnabled=false
     PROPERTIES
-    it 'creates the /opt/nexus-3.11.0-01/bin/nexus.vmoptions' do
-      expect(chef_run).to create_file('/opt/nexus-3.11.0-01/bin/nexus.vmoptions')
+    it 'creates the /opt/nexus-3.12.1-01/bin/nexus.vmoptions' do
+      expect(chef_run).to create_file('/opt/nexus-3.12.1-01/bin/nexus.vmoptions')
         .with_content(nexus_jvm_properties_content)
     end
   end
