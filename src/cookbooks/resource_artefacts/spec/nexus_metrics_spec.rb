@@ -13,7 +13,7 @@ describe 'resource_artefacts::nexus_metrics' do
     it 'installs the jolokia jar file' do
       expect(chef_run).to create_remote_file('/usr/local/jolokia/jolokia.jar')
         .with(
-          source: 'http://search.maven.org/remotecontent?filepath=org/jolokia/jolokia-jvm/1.5.0/jolokia-jvm-1.5.0-agent.jar'
+          source: 'http://search.maven.org/remotecontent?filepath=org/jolokia/jolokia-jvm/1.6.0/jolokia-jvm-1.6.0-agent.jar'
         )
     end
   end
