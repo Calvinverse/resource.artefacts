@@ -39,6 +39,7 @@
             "shutdown_command": "echo '{{user `admin_password`}}' | sudo -S -E shutdown -P now",
             "shutdown_timeout": "5m",
             "skip_compaction": true,
+            "skip_export": true,
             "ssh_password": "{{user `admin_password`}}",
             "ssh_timeout": "4h",
             "ssh_username": "{{user `admin_username`}}",
