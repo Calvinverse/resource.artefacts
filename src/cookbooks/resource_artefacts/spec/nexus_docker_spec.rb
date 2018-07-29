@@ -12,7 +12,7 @@ describe 'resource_artefacts::nexus_docker' do
     it 'creates and mounts the nexus_docker file system at /srv/nexus/blob/docker' do
       expect(chef_run).to create_directory('/srv/nexus/blob/docker').with(
         group: 'nexus',
-        mode: '777',
+        mode: '770',
         owner: 'nexus'
       )
     end

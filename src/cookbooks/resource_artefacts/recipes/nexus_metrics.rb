@@ -114,7 +114,9 @@ file "#{consul_template_template_path}/#{telegraf_jolokia_inputs_template_file}"
 
       # Nexus
   CONF
-  mode '755'
+  group 'root'
+  mode '0550'
+  owner 'root'
 end
 
 file "#{consul_template_config_path}/telegraf_jolokia_inputs.hcl" do
@@ -142,7 +144,7 @@ file "#{consul_template_config_path}/telegraf_jolokia_inputs.hcl" do
       # command will only run if the resulting template changes. The command must
       # return within 30s (configurable), and it must have a successful exit code.
       # Consul Template is not a replacement for a process monitor or init system.
-      command = "systemctl reload #{telegraf_service}"
+      command = "chown #{node['telegraf']['service_user']}:#{node['telegraf']['service_group']} #{telegraf_config_directory}/inputs_jolokia.conf && systemctl reload #{telegraf_service}"
 
       # This is the maximum amount of time to wait for the optional command to
       # return. Default is 30s.
@@ -158,7 +160,7 @@ file "#{consul_template_config_path}/telegraf_jolokia_inputs.hcl" do
       # unspecified, Consul Template will attempt to match the permissions of the
       # file that already exists at the destination path. If no file exists at that
       # path, the permissions are 0644.
-      perms = 0755
+      perms = 0550
 
       # This option backs up the previously rendered template at the destination
       # path before writing a new one. It keeps exactly one backup. This option is
@@ -184,5 +186,7 @@ file "#{consul_template_config_path}/telegraf_jolokia_inputs.hcl" do
       }
     }
   HCL
-  mode '755'
+  group 'root'
+  mode '0550'
+  owner 'root'
 end

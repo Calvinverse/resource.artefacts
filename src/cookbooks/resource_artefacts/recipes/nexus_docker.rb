@@ -18,7 +18,7 @@ docker_blob_store_path = "#{store_path}/docker"
 directory docker_blob_store_path do
   action :create
   group node['nexus3']['service_group']
-  mode '777'
+  mode '770'
   owner node['nexus3']['service_user']
 end
 

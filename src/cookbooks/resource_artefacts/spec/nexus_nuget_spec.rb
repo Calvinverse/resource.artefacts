@@ -12,7 +12,7 @@ describe 'resource_artefacts::nexus_nuget' do
     it 'creates and mounts the nexus_nuget file system at /srv/nexus/blob/nuget' do
       expect(chef_run).to create_directory('/srv/nexus/blob/nuget').with(
         group: 'nexus',
-        mode: '777',
+        mode: '770',
         owner: 'nexus'
       )
     end

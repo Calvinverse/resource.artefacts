@@ -16,7 +16,7 @@ describe 'resource_artefacts::nexus' do
     it 'creates and mounts the nexus_scratch file system at /srv/nexus/blob/scratch' do
       expect(chef_run).to create_directory('/srv/nexus/blob/scratch').with(
         group: 'nexus',
-        mode: '777',
+        mode: '770',
         owner: 'nexus'
       )
     end
@@ -294,6 +294,11 @@ describe 'resource_artefacts::nexus' do
       CONF
       expect(chef_run).to create_file('/etc/consul-template.d/templates/nexus_ldap_script.ctmpl')
         .with_content(nexus_ldap_script_template_content)
+        .with(
+          group: 'root',
+          owner: 'root',
+          mode: '0550'
+        )
     end
 
     consul_template_nexus_ldap_content = <<~CONF
@@ -335,7 +340,7 @@ describe 'resource_artefacts::nexus' do
         # unspecified, Consul Template will attempt to match the permissions of the
         # file that already exists at the destination path. If no file exists at that
         # path, the permissions are 0644.
-        perms = 0755
+        perms = 0550
 
         # This option backs up the previously rendered template at the destination
         # path before writing a new one. It keeps exactly one backup. This option is
@@ -364,6 +369,11 @@ describe 'resource_artefacts::nexus' do
     it 'creates nexus_ldap.hcl in the consul-template template directory' do
       expect(chef_run).to create_file('/etc/consul-template.d/conf/nexus_ldap.hcl')
         .with_content(consul_template_nexus_ldap_content)
+        .with(
+          group: 'root',
+          owner: 'root',
+          mode: '0550'
+        )
     end
   end
 end

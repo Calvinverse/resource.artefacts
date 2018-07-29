@@ -12,7 +12,7 @@ describe 'resource_artefacts::nexus_artefacts' do
     it 'creates and mounts the nexus_artefacts file system at /srv/nexus/blob/artefacts' do
       expect(chef_run).to create_directory('/srv/nexus/blob/artefacts').with(
         group: 'nexus',
-        mode: '777',
+        mode: '770',
         owner: 'nexus'
       )
     end
