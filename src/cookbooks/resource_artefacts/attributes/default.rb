@@ -56,7 +56,7 @@ default['nexus3']['version'] = '3.12.1-01'
 default['nexus3']['path'] = '/opt'
 default['nexus3']['data'] = '/home/nexus'
 default['nexus3']['home'] = '/opt/nexus'
-default['nexus3']['install_path'] = "#{node['nexus3']['path']}/nexus-#{node['nexus3']['version']}"
+default['nexus3']['install_path'] = "#{node['nexus3']['path']}/nexus"
 default['nexus3']['port'] = 8081
 default['nexus3']['proxy_path'] = '/artefacts'
 default['nexus3']['blob_store_path'] = '/srv/nexus/blob'
@@ -97,4 +97,6 @@ default['nexus3']['api']['sensitive'] = false
 # TELEGRAF
 #
 
+default['telegraf']['service_user'] = 'telegraf'
+default['telegraf']['service_group'] = 'telegraf'
 default['telegraf']['config_directory'] = '/etc/telegraf/telegraf.d'
