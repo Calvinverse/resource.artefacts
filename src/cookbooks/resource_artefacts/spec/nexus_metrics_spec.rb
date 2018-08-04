@@ -123,7 +123,7 @@ describe 'resource_artefacts::nexus_metrics' do
         # command will only run if the resulting template changes. The command must
         # return within 30s (configurable), and it must have a successful exit code.
         # Consul Template is not a replacement for a process monitor or init system.
-        command = "chown telegraf:telegraf /etc/telegraf/telegraf.d/inputs_jolokia.conf && systemctl reload telegraf"
+        command = "chown telegraf:telegraf /etc/telegraf/telegraf.d/inputs_jolokia.conf && systemctl restart telegraf"
 
         # This is the maximum amount of time to wait for the optional command to
         # return. Default is 30s.
