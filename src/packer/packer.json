@@ -26,7 +26,7 @@
             "communicator": "ssh",
             "enable_dynamic_memory": false,
             "enable_mac_spoofing": false,
-            "enable_secure_boot": false,
+            "enable_secure_boot": true,
             "enable_virtualization_extensions": false,
             "generation": 2,
             "guest_additions_mode": "disable",

@@ -632,7 +632,7 @@
             The full path and version to the packer command line executable. If not defined the packages directory is searched.
         -->
         <ToolsExternalPackerPath>UNDEFINED</ToolsExternalPackerPath>
-        <ToolsExternalPackerVersion>1.2.4</ToolsExternalPackerVersion>
+        <ToolsExternalPackerVersion>1.2.5</ToolsExternalPackerVersion>
     </PropertyGroup>
 
 
