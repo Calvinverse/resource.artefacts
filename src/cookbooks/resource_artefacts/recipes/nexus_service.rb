@@ -22,8 +22,6 @@ end
 # See here: https://help.sonatype.com/display/NXRM3/System+Requirements#filehandles
 systemd_service 'nexus' do
   action :create
-  after %w[network.target]
-  description 'nexus service'
   install do
     wanted_by %w[multi-user.target]
   end
@@ -34,6 +32,10 @@ systemd_service 'nexus' do
     restart 'on-abort'
     type 'forking'
     user node['nexus3']['service_user']
+  end
+  unit do
+    after %w[network.target]
+    description 'nexus service'
   end
 end
 

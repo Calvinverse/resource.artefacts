@@ -40,7 +40,7 @@ describe 'resource_artefacts::nexus_gems' do
                 "timeout": "5s"
               }
             ],
-            "enableTagOverride": true,
+            "enable_tag_override": false,
             "id": "nexus_gems_mirror_api",
             "name": "artefacts",
             "port": #{nexus_management_port},

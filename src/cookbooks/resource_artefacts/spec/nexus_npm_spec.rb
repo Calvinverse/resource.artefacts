@@ -12,7 +12,7 @@ describe 'resource_artefacts::nexus_npm' do
     it 'creates and mounts the nexus_npm file system at /srv/nexus/blob/npm' do
       expect(chef_run).to create_directory('/srv/nexus/blob/npm').with(
         group: 'nexus',
-        mode: '777',
+        mode: '770',
         owner: 'nexus'
       )
     end
@@ -108,7 +108,7 @@ describe 'resource_artefacts::nexus_npm' do
                 "timeout": "5s"
               }
             ],
-            "enableTagOverride": false,
+            "enable_tag_override": false,
             "id": "nexus_npm_production_read_api",
             "name": "artefacts",
             "port": #{nexus_management_port},
@@ -139,7 +139,7 @@ describe 'resource_artefacts::nexus_npm' do
                 "timeout": "5s"
               }
             ],
-            "enableTagOverride": false,
+            "enable_tag_override": false,
             "id": "nexus_npm_production_write_api",
             "name": "artefacts",
             "port": #{nexus_management_port},
@@ -170,7 +170,7 @@ describe 'resource_artefacts::nexus_npm' do
                 "timeout": "5s"
               }
             ],
-            "enableTagOverride": false,
+            "enable_tag_override": false,
             "id": "nexus_npm_qa_read_api",
             "name": "artefacts",
             "port": #{nexus_management_port},
@@ -201,7 +201,7 @@ describe 'resource_artefacts::nexus_npm' do
                 "timeout": "5s"
               }
             ],
-            "enableTagOverride": false,
+            "enable_tag_override": false,
             "id": "nexus_npm_qa_write_api",
             "name": "artefacts",
             "port": #{nexus_management_port},

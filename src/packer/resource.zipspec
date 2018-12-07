@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<archive>
+    <name>${ProductName}-${VersionSemantic}</name>
+    <files>
+        <file
+            src="${DirWorkspace}\readme.md"
+            target="" />
+        <file
+            src="${DirTemp}\${ImageName}\**\*.*"
+            target="resource" />
+        <file
+            src="${DirWorkspace}\config\**\*.*"
+            target="config" />
+    </files>
+</archive>
