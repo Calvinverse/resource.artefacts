@@ -26,7 +26,7 @@ scratch_blob_store_path = node['nexus3']['scratch_blob_store_path']
 directory scratch_blob_store_path do
   action :create
   group node['nexus3']['service_group']
-  mode '777'
+  mode '770'
   owner node['nexus3']['service_user']
 end
 
@@ -124,7 +124,7 @@ file '/etc/consul/conf.d/nexus-management.json' do
               "timeout": "5s"
             }
           ],
-          "enableTagOverride": true,
+          "enable_tag_override": false,
           "id": "nexus_management",
           "name": "artefacts",
           "port": #{nexus_management_port},
@@ -295,7 +295,9 @@ file "#{consul_template_template_path}/#{nexus_ldap_script_template_file}" do
     echo 'The LDAP information is not available in the Consul K-V. Will not update Nexus.'
     {{ end }}
   CONF
-  mode '755'
+  group 'root'
+  mode '0550'
+  owner 'root'
 end
 
 nexus_ldap_script_file = node['nexus3']['script_ldap_file']
@@ -340,7 +342,7 @@ file "#{consul_template_config_path}/nexus_ldap.hcl" do
       # unspecified, Consul Template will attempt to match the permissions of the
       # file that already exists at the destination path. If no file exists at that
       # path, the permissions are 0644.
-      perms = 0755
+      perms = 0550
 
       # This option backs up the previously rendered template at the destination
       # path before writing a new one. It keeps exactly one backup. This option is
@@ -366,5 +368,7 @@ file "#{consul_template_config_path}/nexus_ldap.hcl" do
       }
     }
   HCL
-  mode '755'
+  group 'root'
+  mode '0550'
+  owner 'root'
 end

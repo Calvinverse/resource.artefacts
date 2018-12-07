@@ -44,19 +44,19 @@ default['jolokia']['agent']['port'] = 8090
 
 default['jolokia']['telegraf']['consul_template_inputs_file'] = 'telegraf_jolokia_inputs.ctmpl'
 
-default['jolokia']['version'] = '1.5.0'
-default['jolokia']['checksum'] = 'CD7E20A2887E013873D7321CEA1E6BF6BD6FFCDD3CD3968D6950EDD8D79BBFB8'
+default['jolokia']['version'] = '1.6.0'
+default['jolokia']['checksum'] = '40123D4728CB62BF7D4FD3C8DE7CF3A0F955F89453A645837E611BA8E6924E02'
 default['jolokia']['url']['jar'] = "http://search.maven.org/remotecontent?filepath=org/jolokia/jolokia-jvm/#{node['jolokia']['version']}/jolokia-jvm-#{node['jolokia']['version']}-agent.jar"
 
 #
 # NEXUS
 #
 
-default['nexus3']['version'] = '3.11.0-01'
+default['nexus3']['version'] = '3.12.1-01'
 default['nexus3']['path'] = '/opt'
 default['nexus3']['data'] = '/home/nexus'
 default['nexus3']['home'] = '/opt/nexus'
-default['nexus3']['install_path'] = "#{node['nexus3']['path']}/nexus-#{node['nexus3']['version']}"
+default['nexus3']['install_path'] = "#{node['nexus3']['path']}/nexus"
 default['nexus3']['port'] = 8081
 default['nexus3']['proxy_path'] = '/artefacts'
 default['nexus3']['blob_store_path'] = '/srv/nexus/blob'
@@ -97,4 +97,6 @@ default['nexus3']['api']['sensitive'] = false
 # TELEGRAF
 #
 
+default['telegraf']['service_user'] = 'telegraf'
+default['telegraf']['service_group'] = 'telegraf'
 default['telegraf']['config_directory'] = '/etc/telegraf/telegraf.d'

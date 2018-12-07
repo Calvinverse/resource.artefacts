@@ -18,7 +18,7 @@ nuget_blob_store_path = "#{store_path}/nuget"
 directory nuget_blob_store_path do
   action :create
   group node['nexus3']['service_group']
-  mode '777'
+  mode '770'
   owner node['nexus3']['service_user']
 end
 
@@ -97,7 +97,7 @@ nexus_proxy_path = node['nexus3']['proxy_path']
                 "timeout": "5s"
               }
             ],
-            "enableTagOverride": false,
+            "enable_tag_override": false,
             "id": "nexus_nuget_production_#{repo_mode}_api",
             "name": "artefacts",
             "port": #{nexus_management_port},
