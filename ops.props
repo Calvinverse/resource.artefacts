@@ -232,7 +232,7 @@
     </PropertyGroup>
 
     <PropertyGroup>
-        <VersionLinuxBaseResource>0.2.6</VersionLinuxBaseResource>
+        <VersionLinuxBaseResource>0.2.7</VersionLinuxBaseResource>
     </PropertyGroup>
 
 
