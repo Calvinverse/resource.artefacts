@@ -24,14 +24,6 @@ default['firewall']['allow_winrm'] = false
 default['firewall']['ipv6_enabled'] = false
 
 #
-# JAVA
-#
-
-default['java']['jdk_version'] = '9'
-default['java']['install_flavor'] = 'openjdk'
-default['java']['accept_license_agreement'] = true
-
-#
 # JOLOKIA
 #
 
