@@ -86,10 +86,10 @@ describe 'resource_artefacts::nexus_nuget' do
             ],
             "enable_tag_override": false,
             "id": "nexus_nuget_production_read_api",
-            "name": "artefacts",
+            "name": "nuget",
             "port": #{nexus_management_port},
             "tags": [
-              "read-production-nuget"
+              "read-production"
             ]
           }
         ]
@@ -117,10 +117,10 @@ describe 'resource_artefacts::nexus_nuget' do
             ],
             "enable_tag_override": false,
             "id": "nexus_nuget_production_write_api",
-            "name": "artefacts",
+            "name": "nuget",
             "port": #{nexus_management_port},
             "tags": [
-              "write-production-nuget"
+              "write-production"
             ]
           }
         ]
@@ -147,7 +147,7 @@ describe 'resource_artefacts::nexus_nuget' do
       expect(chef_run).to run_nexus3_api('role-builds-push-nuget').with(
         content: "security.addRole('nx-builds-push-nuget', 'nx-builds-push-nuget'," \
         " 'User with privileges to allow pushing packages to the different nuget repositories'," \
-        " ['nx-repository-view-nuget-*-browse', 'nx-repository-view-nuget-*-read', 'nx-repository-view-nuget-*-add', 'nx-repository-view-nuget-*-edit'], [''])"
+        " ['nx-apikey-all', 'nx-repository-view-nuget-*-browse', 'nx-repository-view-nuget-*-read', 'nx-repository-view-nuget-*-add', 'nx-repository-view-nuget-*-edit'], [''])"
       )
     end
 

@@ -122,10 +122,10 @@ nexus_proxy_path = node['nexus3']['proxy_path']
             ],
             "enable_tag_override": false,
             "id": "nexus_npm_production_#{repo_mode}_api",
-            "name": "artefacts",
+            "name": "npm",
             "port": #{nexus_management_port},
             "tags": [
-              "#{repo_mode}-production-npm"
+              "#{repo_mode}-production"
             ]
           }
         ]
@@ -154,10 +154,10 @@ end
             ],
             "enable_tag_override": false,
             "id": "nexus_npm_qa_#{repo_mode}_api",
-            "name": "artefacts",
+            "name": "npm",
             "port": #{nexus_management_port},
             "tags": [
-              "#{repo_mode}-qa-npm"
+              "#{repo_mode}-qa"
             ]
           }
         ]

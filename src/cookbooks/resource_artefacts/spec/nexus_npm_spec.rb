@@ -110,10 +110,10 @@ describe 'resource_artefacts::nexus_npm' do
             ],
             "enable_tag_override": false,
             "id": "nexus_npm_production_read_api",
-            "name": "artefacts",
+            "name": "npm",
             "port": #{nexus_management_port},
             "tags": [
-              "read-production-npm"
+              "read-production"
             ]
           }
         ]
@@ -141,10 +141,10 @@ describe 'resource_artefacts::nexus_npm' do
             ],
             "enable_tag_override": false,
             "id": "nexus_npm_production_write_api",
-            "name": "artefacts",
+            "name": "npm",
             "port": #{nexus_management_port},
             "tags": [
-              "write-production-npm"
+              "write-production"
             ]
           }
         ]
@@ -172,10 +172,10 @@ describe 'resource_artefacts::nexus_npm' do
             ],
             "enable_tag_override": false,
             "id": "nexus_npm_qa_read_api",
-            "name": "artefacts",
+            "name": "npm",
             "port": #{nexus_management_port},
             "tags": [
-              "read-qa-npm"
+              "read-qa"
             ]
           }
         ]
@@ -203,10 +203,10 @@ describe 'resource_artefacts::nexus_npm' do
             ],
             "enable_tag_override": false,
             "id": "nexus_npm_qa_write_api",
-            "name": "artefacts",
+            "name": "npm",
             "port": #{nexus_management_port},
             "tags": [
-              "write-qa-npm"
+              "write-qa"
             ]
           }
         ]

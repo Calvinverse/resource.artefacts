@@ -223,10 +223,10 @@ describe 'resource_artefacts::nexus_docker' do
             ],
             "enable_tag_override": false,
             "id": "nexus_docker_production_read_api",
-            "name": "artefacts",
+            "name": "docker",
             "port": 5000,
             "tags": [
-              "read-production-docker"
+              "read-production"
             ]
           }
         ]
@@ -254,10 +254,10 @@ describe 'resource_artefacts::nexus_docker' do
             ],
             "enable_tag_override": false,
             "id": "nexus_docker_production_write_api",
-            "name": "artefacts",
+            "name": "docker",
             "port": 5002,
             "tags": [
-              "write-production-docker"
+              "write-production"
             ]
           }
         ]
@@ -285,10 +285,10 @@ describe 'resource_artefacts::nexus_docker' do
             ],
             "enable_tag_override": false,
             "id": "nexus_docker_qa_read_api",
-            "name": "artefacts",
+            "name": "docker",
             "port": 5010,
             "tags": [
-              "read-qa-docker"
+              "read-qa"
             ]
           }
         ]
@@ -316,10 +316,10 @@ describe 'resource_artefacts::nexus_docker' do
             ],
             "enable_tag_override": false,
             "id": "nexus_docker_qa_write_api",
-            "name": "artefacts",
+            "name": "docker",
             "port": 5012,
             "tags": [
-              "write-qa-docker"
+              "write-qa"
             ]
           }
         ]
@@ -344,7 +344,7 @@ describe 'resource_artefacts::nexus_docker' do
 
     it 'create a nomad user' do
       expect(chef_run).to run_nexus3_api('userNomad').with(
-        content: "security.addUser('nomad.container.pull', 'Nomad', 'Container.Pull', 'nomad.container.pull@example.com', true, 'nomad.container.pull', ['nx-infrastructure-container-pull'])"
+        content: "security.addUser('container.pull', 'Container', 'Pull', 'container.pull@vista.co', true, 'container.pull', ['nx-infrastructure-container-pull'])"
       )
     end
 

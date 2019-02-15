@@ -54,10 +54,10 @@ file '/etc/consul/conf.d/nexus-gems-mirror.json' do
           ],
           "enable_tag_override": false,
           "id": "nexus_gems_mirror_api",
-          "name": "artefacts",
+          "name": "gems",
           "port": #{nexus_management_port},
           "tags": [
-            "read-mirror-gems"
+            "read-mirror"
           ]
         }
       ]

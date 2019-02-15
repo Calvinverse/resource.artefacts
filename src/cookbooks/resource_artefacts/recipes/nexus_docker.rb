@@ -232,10 +232,10 @@ file '/etc/consul/conf.d/nexus-docker-production-read.json' do # ~FC005
           ],
           "enable_tag_override": false,
           "id": "nexus_docker_production_read_api",
-          "name": "artefacts",
+          "name": "docker",
           "port": #{port_http_docker_hosted_production_read},
           "tags": [
-            "read-production-docker"
+            "read-production"
           ]
         }
       ]
@@ -262,10 +262,10 @@ file '/etc/consul/conf.d/nexus-docker-production-write.json' do
           ],
           "enable_tag_override": false,
           "id": "nexus_docker_production_write_api",
-          "name": "artefacts",
+          "name": "docker",
           "port": #{port_http_docker_hosted_production_write},
           "tags": [
-            "write-production-docker"
+            "write-production"
           ]
         }
       ]
@@ -292,10 +292,10 @@ file '/etc/consul/conf.d/nexus-docker-qa-read.json' do
           ],
           "enable_tag_override": false,
           "id": "nexus_docker_qa_read_api",
-          "name": "artefacts",
+          "name": "docker",
           "port": #{port_http_docker_hosted_qa_read},
           "tags": [
-            "read-qa-docker"
+            "read-qa"
           ]
         }
       ]
@@ -322,10 +322,10 @@ file '/etc/consul/conf.d/nexus-docker-qa-write.json' do
           ],
           "enable_tag_override": false,
           "id": "nexus_docker_qa_write_api",
-          "name": "artefacts",
+          "name": "docker",
           "port": #{port_http_docker_hosted_qa_write},
           "tags": [
-            "write-qa-docker"
+            "write-qa"
           ]
         }
       ]
@@ -347,7 +347,7 @@ end
 
 nexus3_api 'userNomad' do
   action :run
-  content "security.addUser('nomad.container.pull', 'Nomad', 'Container.Pull', 'nomad.container.pull@example.com', true, 'nomad.container.pull', ['nx-infrastructure-container-pull'])"
+  content "security.addUser('container.pull', 'Container', 'Pull', 'container.pull@vista.co', true, 'container.pull', ['nx-infrastructure-container-pull'])"
 end
 
 # Create the role which is used by the build system for pulling docker containers

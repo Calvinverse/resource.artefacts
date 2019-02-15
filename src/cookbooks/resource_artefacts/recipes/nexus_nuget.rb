@@ -99,10 +99,10 @@ nexus_proxy_path = node['nexus3']['proxy_path']
             ],
             "enable_tag_override": false,
             "id": "nexus_nuget_production_#{repo_mode}_api",
-            "name": "artefacts",
+            "name": "nuget",
             "port": #{nexus_management_port},
             "tags": [
-              "#{repo_mode}-production-nuget"
+              "#{repo_mode}-production"
             ]
           }
         ]
@@ -127,7 +127,7 @@ end
 nexus3_api 'role-builds-push-nuget' do
   content "security.addRole('nx-builds-push-nuget', 'nx-builds-push-nuget'," \
     " 'User with privileges to allow pushing packages to the different nuget repositories'," \
-    " ['nx-repository-view-nuget-*-browse', 'nx-repository-view-nuget-*-read', 'nx-repository-view-nuget-*-add', 'nx-repository-view-nuget-*-edit'], [''])"
+    " ['nx-apikey-all', 'nx-repository-view-nuget-*-browse', 'nx-repository-view-nuget-*-read', 'nx-repository-view-nuget-*-add', 'nx-repository-view-nuget-*-edit'], [''])"
   action :run
 end
 
