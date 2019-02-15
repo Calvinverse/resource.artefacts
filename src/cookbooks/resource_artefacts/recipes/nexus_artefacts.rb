@@ -46,13 +46,25 @@ nexus3_api 'artefacts-qa-write' do
   action %i[create run delete]
 end
 
+blob_name_artefacts_development = 'artefacts_development'
+nexus3_api 'artefacts-development-blob' do
+  content "blobStore.createFileBlobStore('#{blob_name_artefacts_development}', '#{artefact_blob_store_path}/#{blob_name_artefacts_development}')"
+  action %i[create run delete]
+end
+
+repository_name_artefacts_development = 'artefacts-development'
+nexus3_api 'artefacts-development-write' do
+  content "import org.sonatype.nexus.repository.storage.WritePolicy; repository.createRawHosted('#{repository_name_artefacts_development}', '#{blob_name_artefacts_development}', true, WritePolicy.ALLOW)"
+  action %i[create run delete]
+end
+
 #
 # CONNECT TO CONSUL
 #
 
 nexus_management_port = node['nexus3']['port']
 nexus_proxy_path = node['nexus3']['proxy_path']
-file '/etc/consul/conf.d/nexus-artefacts-production.json' do
+file '/etc/consul/conf.d/nexus-artefacts-production.json' do # ~FC005
   action :create
   content <<~JSON
     {
@@ -107,6 +119,37 @@ file '/etc/consul/conf.d/nexus-artefacts-qa.json' do
           "tags": [
             "read-qa",
             "write-qa"
+          ]
+        }
+      ]
+    }
+  JSON
+end
+
+file '/etc/consul/conf.d/nexus-artefacts-development.json' do
+  action :create
+  content <<~JSON
+    {
+      "services": [
+        {
+          "checks": [
+            {
+              "header": { "Authorization" : ["Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo"]},
+              "http": "http://localhost:#{nexus_management_port}#{nexus_proxy_path}/service/metrics/ping",
+              "id": "nexus_artefacts_development_api_ping",
+              "interval": "15s",
+              "method": "GET",
+              "name": "Nexus artefacts Development repository ping",
+              "timeout": "5s"
+            }
+          ],
+          "enable_tag_override": false,
+          "id": "nexus_artefacts_development_api",
+          "name": "artefacts",
+          "port": #{nexus_management_port},
+          "tags": [
+            "read-development",
+            "write-development"
           ]
         }
       ]

@@ -44,6 +44,18 @@ describe 'resource_artefacts::nexus_artefacts' do
         content: "import org.sonatype.nexus.repository.storage.WritePolicy; repository.createRawHosted('artefacts-qa', 'artefacts_qa', true, WritePolicy.ALLOW)"
       )
     end
+
+    it 'creates a blob store for development artefacts files' do
+      expect(chef_run).to run_nexus3_api('artefacts-development-blob').with(
+        content: "blobStore.createFileBlobStore('artefacts_development', '/srv/nexus/blob/artefacts/artefacts_development')"
+      )
+    end
+
+    it 'creates a repository for development artefact files' do
+      expect(chef_run).to run_nexus3_api('artefacts-development-write').with(
+        content: "import org.sonatype.nexus.repository.storage.WritePolicy; repository.createRawHosted('artefacts-development', 'artefacts_development', true, WritePolicy.ALLOW)"
+      )
+    end
   end
 
   context 'registers the service with consul' do
@@ -111,6 +123,38 @@ describe 'resource_artefacts::nexus_artefacts' do
     it 'creates the /etc/consul/conf.d/nexus-artefacts-qa.json' do
       expect(chef_run).to create_file('/etc/consul/conf.d/nexus-artefacts-qa.json')
         .with_content(consul_nexus_artefact_qa_config_content)
+    end
+
+    consul_nexus_artefact_development_config_content = <<~JSON
+      {
+        "services": [
+          {
+            "checks": [
+              {
+                "header": { "Authorization" : ["Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo"]},
+                "http": "http://localhost:#{nexus_management_port}#{nexus_proxy_path}/service/metrics/ping",
+                "id": "nexus_artefacts_development_api_ping",
+                "interval": "15s",
+                "method": "GET",
+                "name": "Nexus artefacts Development repository ping",
+                "timeout": "5s"
+              }
+            ],
+            "enable_tag_override": false,
+            "id": "nexus_artefacts_development_api",
+            "name": "artefacts",
+            "port": #{nexus_management_port},
+            "tags": [
+              "read-development",
+              "write-development"
+            ]
+          }
+        ]
+      }
+    JSON
+    it 'creates the /etc/consul/conf.d/nexus-artefacts-development.json' do
+      expect(chef_run).to create_file('/etc/consul/conf.d/nexus-artefacts-development.json')
+        .with_content(consul_nexus_artefact_development_config_content)
     end
   end
 
