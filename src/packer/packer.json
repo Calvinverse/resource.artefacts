@@ -203,7 +203,7 @@
             "env_var_format": "$env:%s=\"%s\"; ",
             "execute_command": ["powershell.exe", "{{.Vars}} {{.Script}}"],
             "inline": [
-                "New-VHD -Path '{{ user `dir_temp` }}/{{ build_name }}/Virtual Hard Disks/nexus_artefacts.vhdx' -SizeBytes 150GB -BlockSizeBytes 1MB",
+                "New-VHD -Path '{{ user `dir_temp` }}/{{ build_name }}/Virtual Hard Disks/nexus_artefacts.vhdx' -SizeBytes 350GB -BlockSizeBytes 1MB",
                 "Add-VmHardDiskDrive -VMName {{ user `vm_name` }} -Path '{{ user `dir_temp` }}/{{build_name}}/Virtual Hard Disks/nexus_artefacts.vhdx'"
             ],
             "tempfile_extension": ".ps1",
