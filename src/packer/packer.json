@@ -16,7 +16,8 @@
         "vm_import_directory": null,
         "vm_name": "not_really_a_vm_name",
         "vm_ram_size_in_mb": "1024",
-        "vm_switch_name": "this_switch_does_not_exist"
+        "vm_switch_name": "this_switch_does_not_exist",
+        "vm_switch_vlan": ""
     },
     "builders": [
         {

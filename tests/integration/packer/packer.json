@@ -44,6 +44,7 @@
             "ssh_timeout": "4h",
             "ssh_username": "{{user `admin_username`}}",
             "switch_name": "{{user `vm_switch_name`}}",
+            "switch_vlan_id": "{{ user `vm_switch_vlan` }}",
             "type": "hyperv-vmcx",
             "vlan_id": "{{ user `vm_switch_vlan` }}",
             "vm_name": "test-{{ user `vm_name` }}"
