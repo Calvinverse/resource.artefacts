@@ -33,12 +33,22 @@ end
 # CONSUL-TEMPLATE FILES FOR TELEGRAF
 #
 
+telegraf_metrics_username = node['nexus3']['user']['telegraf']['username']
+telegraf_metrics_password = node['nexus3']['user']['telegraf']['password']
+nexus3_api 'user-telegraf' do
+  action :run
+  content "security.addUser('#{telegraf_metrics_username}', 'Telegraf', 'Metrics', 'telegraf.metrics@vista.co', true, '#{telegraf_metrics_password}', ['nx-metrics'])"
+end
+
 consul_template_config_path = node['consul_template']['config_path']
 consul_template_template_path = node['consul_template']['template_path']
 
 jolokia_agent_context = node['jolokia']['agent']['context']
 jolokia_agent_host = node['jolokia']['agent']['host']
 jolokia_agent_port = node['jolokia']['agent']['port']
+
+nexus_management_port = node['nexus3']['port']
+nexus_proxy_path = node['nexus3']['proxy_path']
 
 telegraf_service = 'telegraf'
 telegraf_config_directory = node['telegraf']['config_directory']
@@ -112,7 +122,44 @@ file "#{consul_template_template_path}/#{telegraf_jolokia_inputs_template_file}"
         tag_keys = ["name"]
         tag_prefix = "buffer_"
 
-      # Nexus
+    [[inputs.http]]
+      ## One or more URLs from which to read formatted metrics
+      urls = [
+        "http://localhost:#{nexus_management_port}#{nexus_proxy_path}/service/metrics/data"
+      ]
+
+      ## HTTP method
+      # method = "GET"
+
+      ## Optional HTTP headers
+      # headers = {"X-Special-Header" = "Special-Value"}
+
+      ## HTTP entity-body to send with POST/PUT requests.
+      # body = ""
+
+      ## HTTP Content-Encoding for write request body, can be set to "gzip" to
+      ## compress body or "identity" to apply no encoding.
+      # content_encoding = "identity"
+
+      ## Optional HTTP Basic Auth Credentials
+      username = "#{telegraf_metrics_username}"
+      password = "#{telegraf_metrics_password}"
+
+      ## Optional TLS Config
+      # tls_ca = "/etc/telegraf/ca.pem"
+      # tls_cert = "/etc/telegraf/cert.pem"
+      # tls_key = "/etc/telegraf/key.pem"
+      ## Use TLS but skip chain & host verification
+      # insecure_skip_verify = false
+
+      ## Amount of time allowed to complete the HTTP request
+      # timeout = "5s"
+
+      ## Data format to consume.
+      ## Each data format has its own unique set of configuration options, read
+      ## more about them here:
+      ## https://github.com/influxdata/telegraf/blob/master/docs/DATA_FORMATS_INPUT.md
+      data_format = "json"
   CONF
   group 'root'
   mode '0550'

@@ -20,77 +20,126 @@ describe 'resource_artefacts::nexus_metrics' do
 
   context 'adds the consul-template files for the telegraf jolokia input' do
     let(:chef_run) { ChefSpec::SoloRunner.converge(described_recipe) }
+    let(:node) { chef_run.node }
 
-    telegraf_jolokia_template_content = <<~CONF
-      # Telegraf Configuration
+    it 'create a telegraf user' do
+      telegraf_metrics_username = node['nexus3']['user']['telegraf']['username']
+      telegraf_metrics_password = node['nexus3']['user']['telegraf']['password']
+      expect(chef_run).to run_nexus3_api('user-telegraf').with(
+        content: "security.addUser('#{telegraf_metrics_username}', 'Telegraf', 'Metrics', 'telegraf.metrics@vista.co', true, '#{telegraf_metrics_password}', ['nx-metrics'])"
+      )
+    end
 
-      ###############################################################################
-      #                            INPUT PLUGINS                                    #
-      ###############################################################################
+    it 'creates telegraf jolokia template file in the consul-template template directory' do
+      telegraf_metrics_username = node['nexus3']['user']['telegraf']['username']
+      telegraf_metrics_password = node['nexus3']['user']['telegraf']['password']
+      telegraf_jolokia_template_content = <<~CONF
+        # Telegraf Configuration
 
-      [[inputs.jolokia2_agent]]
-      urls = ["http://127.0.0.1:8090/jolokia"]
-        [inputs.jolokia2_agent.tags]
-          influxdb_database = "{{ keyOrDefault "config/services/metrics/databases/services" "services" }}"
-          service = "nexus"
+        ###############################################################################
+        #                            INPUT PLUGINS                                    #
+        ###############################################################################
 
-        # JVM metrics
-        # Runtime
-        [[inputs.jolokia2_agent.metric]]
-          name  = "jvm_runtime"
-          mbean = "java.lang:type=Runtime"
-          paths = ["Uptime"]
+        [[inputs.jolokia2_agent]]
+        urls = ["http://127.0.0.1:8090/jolokia"]
+          [inputs.jolokia2_agent.tags]
+            influxdb_database = "{{ keyOrDefault "config/services/metrics/databases/services" "services" }}"
+            service = "nexus"
 
-        # Memory
-        [[inputs.jolokia2_agent.metric]]
-          name  = "jvm_memory"
-          mbean = "java.lang:type=Memory"
-          paths = ["HeapMemoryUsage", "NonHeapMemoryUsage", "ObjectPendingFinalizationCount"]
+          # JVM metrics
+          # Runtime
+          [[inputs.jolokia2_agent.metric]]
+            name  = "jvm_runtime"
+            mbean = "java.lang:type=Runtime"
+            paths = ["Uptime"]
 
-        # GC
-        [[inputs.jolokia2_agent.metric]]
-          name  = "jvm_garbage_collector"
-          mbean = "java.lang:name=*,type=GarbageCollector"
-          paths = ["CollectionTime", "CollectionCount"]
-          tag_keys = ["name"]
+          # Memory
+          [[inputs.jolokia2_agent.metric]]
+            name  = "jvm_memory"
+            mbean = "java.lang:type=Memory"
+            paths = ["HeapMemoryUsage", "NonHeapMemoryUsage", "ObjectPendingFinalizationCount"]
 
-        # MemoryPool
-        [[inputs.jolokia2_agent.metric]]
-          name  = "jvm_memory_pool"
-          mbean = "java.lang:name=*,type=MemoryPool"
-          paths = ["Usage", "PeakUsage", "CollectionUsage"]
-          tag_keys = ["name"]
-          tag_prefix = "pool_"
+          # GC
+          [[inputs.jolokia2_agent.metric]]
+            name  = "jvm_garbage_collector"
+            mbean = "java.lang:name=*,type=GarbageCollector"
+            paths = ["CollectionTime", "CollectionCount"]
+            tag_keys = ["name"]
 
-        # Operating system
-        [[inputs.jolokia2_agent.metric]]
-          name  = "jvm_operating_system"
-          mbean = "java.lang:type=OperatingSystem"
-          paths = [
-            "CommittedVirtualMemorySize",
-            "FreePhysicalMemorySize",
-            "FreeSwapSpaceSize",
-            "TotalPhysicalMemorySize",
-            "TotalSwapSpaceSize",
-            "AvailableProcessors",
-            "SystemCpuLoad",
-            "ProcessCpuTime",
-            "ProcessCpuLoad",
-            "SystemLoadAverage",
+          # MemoryPool
+          [[inputs.jolokia2_agent.metric]]
+            name  = "jvm_memory_pool"
+            mbean = "java.lang:name=*,type=MemoryPool"
+            paths = ["Usage", "PeakUsage", "CollectionUsage"]
+            tag_keys = ["name"]
+            tag_prefix = "pool_"
+
+          # Operating system
+          [[inputs.jolokia2_agent.metric]]
+            name  = "jvm_operating_system"
+            mbean = "java.lang:type=OperatingSystem"
+            paths = [
+              "CommittedVirtualMemorySize",
+              "FreePhysicalMemorySize",
+              "FreeSwapSpaceSize",
+              "TotalPhysicalMemorySize",
+              "TotalSwapSpaceSize",
+              "AvailableProcessors",
+              "SystemCpuLoad",
+              "ProcessCpuTime",
+              "ProcessCpuLoad",
+              "SystemLoadAverage",
+            ]
+
+          # Java.nio
+          # BufferPool
+          [[inputs.jolokia2_agent.metric]]
+            name  = "jvm_buffer_pool"
+            mbean = "java.nio:name=*,type=MemoryPool"
+            paths = ["TotalCapacity", "MemoryUsed", "Count"]
+            tag_keys = ["name"]
+            tag_prefix = "buffer_"
+
+        [[inputs.http]]
+          ## One or more URLs from which to read formatted metrics
+          urls = [
+            "http://localhost:#{nexus_management_port}#{nexus_proxy_path}/service/metrics/data"
           ]
 
-        # Java.nio
-        # BufferPool
-        [[inputs.jolokia2_agent.metric]]
-          name  = "jvm_buffer_pool"
-          mbean = "java.nio:name=*,type=MemoryPool"
-          paths = ["TotalCapacity", "MemoryUsed", "Count"]
-          tag_keys = ["name"]
-          tag_prefix = "buffer_"
+          ## HTTP method
+          # method = "GET"
 
-        # Nexus
-    CONF
-    it 'creates telegraf jolokia template file in the consul-template template directory' do
+          ## Optional HTTP headers
+          # headers = {"X-Special-Header" = "Special-Value"}
+
+          ## HTTP entity-body to send with POST/PUT requests.
+          # body = ""
+
+          ## HTTP Content-Encoding for write request body, can be set to "gzip" to
+          ## compress body or "identity" to apply no encoding.
+          # content_encoding = "identity"
+
+          ## Optional HTTP Basic Auth Credentials
+          username = "#{telegraf_metrics_username}"
+          password = "#{telegraf_metrics_password}"
+
+          ## Optional TLS Config
+          # tls_ca = "/etc/telegraf/ca.pem"
+          # tls_cert = "/etc/telegraf/cert.pem"
+          # tls_key = "/etc/telegraf/key.pem"
+          ## Use TLS but skip chain & host verification
+          # insecure_skip_verify = false
+
+          ## Amount of time allowed to complete the HTTP request
+          # timeout = "5s"
+
+          ## Data format to consume.
+          ## Each data format has its own unique set of configuration options, read
+          ## more about them here:
+          ## https://github.com/influxdata/telegraf/blob/master/docs/DATA_FORMATS_INPUT.md
+          data_format = "json"
+      CONF
+
       expect(chef_run).to create_file('/etc/consul-template.d/templates/telegraf_jolokia_inputs.ctmpl')
         .with_content(telegraf_jolokia_template_content)
         .with(

@@ -67,6 +67,9 @@ default['nexus3']['instance_name'] = 'nexus'
 default['nexus3']['user']['ldap_config']['username'] = 'consul.template'
 default['nexus3']['user']['ldap_config']['password'] = SecureRandom.uuid
 
+default['nexus3']['user']['telegraf']['username'] = 'telegraf.metrics'
+default['nexus3']['user']['telegraf']['password'] = SecureRandom.uuid
+
 # repositories
 default['nexus3']['repository']['docker']['port']['http']['production']['read'] = 5000
 default['nexus3']['repository']['docker']['port']['https']['production']['read'] = 5001
