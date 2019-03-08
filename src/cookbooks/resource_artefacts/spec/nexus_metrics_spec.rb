@@ -138,6 +138,10 @@ describe 'resource_artefacts::nexus_metrics' do
           ## more about them here:
           ## https://github.com/influxdata/telegraf/blob/master/docs/DATA_FORMATS_INPUT.md
           data_format = "json"
+
+          [inputs.http.tags]
+            influxdb_database = "{{ keyOrDefault "config/services/metrics/databases/services" "services" }}"
+            service = "nexus"
       CONF
 
       expect(chef_run).to create_file('/etc/consul-template.d/templates/telegraf_jolokia_inputs.ctmpl')
