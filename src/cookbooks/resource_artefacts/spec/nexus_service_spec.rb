@@ -10,7 +10,13 @@ describe 'resource_artefacts::nexus_service' do
     let(:chef_run) { ChefSpec::SoloRunner.converge(described_recipe) }
 
     nexus_jvm_properties_content = <<~PROPERTIES
-      -XX:MaxDirectMemorySize=2G
+      -XX:+UseConcMarkSweepGC
+      -XX:+ExplicitGCInvokesConcurrent
+      -XX:+ParallelRefProcEnabled
+      -XX:+UseStringDeduplication
+      -XX:+CMSParallelRemarkEnabled
+      -XX:+CMSIncrementalMode
+      -XX:CMSInitiatingOccupancyFraction=75
       -XX:+HeapDumpOnOutOfMemoryError
       -XX:+UnlockDiagnosticVMOptions
       -XX:+UnsyncloadClass
@@ -400,15 +406,24 @@ describe 'resource_artefacts::nexus_service' do
       java_memory() {
         java_max_memory=""
 
-        # Check for the 'real memory size' and calculate mx from a ratio
-        # given (default is 70%)
         max_mem="$(max_memory)"
-        if [ "x${max_mem}" != "x0" ]; then
-          ratio=70
 
-          mx=$(echo "(${max_mem} * ${ratio} / 100 + 0.5)" | bc | awk '{printf("%d\\n",$1 + 0.5)}')
-          echo "-Xmx${mx}m -Xms${mx}m"
-        fi
+        # Check for the 'real memory size' and calculate mx from a ratio given. Default is 80% so
+        # that we can get the minimum requirements for the maximum memory and the maximum direct
+        # memory as given here: https://help.sonatype.com/repomanager3/system-requirements#SystemRequirements-Memory
+        ratio=80
+        mx=$(echo "(${max_mem} * ${ratio} / 100 + 0.5)" | bc | awk '{printf("%d\\n",$1 + 0.5)}')
+
+        # Define how much we are above 4Gb. If 4Gb or less return 0
+        above_min=$(echo "n=(${max_mem} - 4096);if(n>0) n else 0" | bc | awk '{printf("%d\\n",$1 + 0.5)}')
+
+        # Calculate how much memory we want to allocate
+        max_java_mem=$(echo "(${above_min} / 8192) * 2800 + 1200" | bc -l | awk '{printf("%d\\n",$1 + 0.5)}')
+
+        # Left over of the 80% goes to the direct memory
+        max_java_direct_mem=$(echo "${mx} - ${max_java_mem}" | bc | awk '{printf("%d\\n",$1 + 0.5)}')
+
+        echo "-Xmx${max_java_mem}m -Xms${max_java_mem}m -XX:MaxDirectMemorySize=${max_java_direct_mem}m"
       }
 
       old_pwd=`pwd`
