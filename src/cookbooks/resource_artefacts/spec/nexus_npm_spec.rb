@@ -33,18 +33,6 @@ describe 'resource_artefacts::nexus_npm' do
       )
     end
 
-    it 'creates a write blob store for qa npm packages' do
-      expect(chef_run).to run_nexus3_api('npm-qa-write-blob').with(
-        content: "blobStore.createFileBlobStore('npm_qa_write', '/srv/nexus/blob/npm/npm_qa_write')"
-      )
-    end
-
-    it 'creates a write repository for qa npm packages' do
-      expect(chef_run).to run_nexus3_api('npm-qa-write').with(
-        content: "import org.sonatype.nexus.repository.storage.WritePolicy; repository.createNpmHosted('npm-qa-write', 'npm_qa_write', true, WritePolicy.ALLOW)"
-      )
-    end
-
     it 'creates a blob store for mirrored npm packages' do
       expect(chef_run).to run_nexus3_api('npm-mirror-blob').with(
         content: "blobStore.createFileBlobStore('npm_mirror', '/srv/nexus/blob/scratch/npm_mirror')"
@@ -53,7 +41,7 @@ describe 'resource_artefacts::nexus_npm' do
 
     it 'creates a repository for mirror npm packages' do
       expect(chef_run).to run_nexus3_api('npm-mirror').with(
-        content: "repository.createNpmProxy('npm-proxy','https://www.npmjs.org/', 'npm_mirror', true)"
+        content: "repository.createNpmProxy('npm-proxy','https://registry.npmjs.org/', 'npm_mirror', true)"
       )
     end
 
@@ -66,18 +54,6 @@ describe 'resource_artefacts::nexus_npm' do
     it 'creates a read repository for production npm packages' do
       expect(chef_run).to run_nexus3_api('npm-production-group').with(
         content: "repository.createNpmGroup('npm-production-read', ['npm-production-write', 'npm-proxy'], 'npm_production_group')"
-      )
-    end
-
-    it 'creates a read blob store for qa npm packages' do
-      expect(chef_run).to run_nexus3_api('npm-qa-group-blob').with(
-        content: "blobStore.createFileBlobStore('npm_qa_group', '/srv/nexus/blob/scratch/npm_qa_group')"
-      )
-    end
-
-    it 'creates a read repository for qa npm packages' do
-      expect(chef_run).to run_nexus3_api('npm-qa-group').with(
-        content: "repository.createNpmGroup('npm-qa-read', ['npm-production-write', 'npm-qa-write', 'npm-proxy'], 'npm_qa_group')"
       )
     end
 
@@ -153,68 +129,6 @@ describe 'resource_artefacts::nexus_npm' do
     it 'creates the /etc/consul/conf.d/nexus-npm-production-write.json' do
       expect(chef_run).to create_file('/etc/consul/conf.d/nexus-npm-production-write.json')
         .with_content(consul_nexus_npm_production_write_config_content)
-    end
-
-    consul_nexus_npm_qa_read_config_content = <<~JSON
-      {
-        "services": [
-          {
-            "checks": [
-              {
-                "header": { "Authorization" : ["Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo"]},
-                "http": "http://localhost:#{nexus_management_port}#{nexus_proxy_path}/service/metrics/ping",
-                "id": "nexus_npm_qa_read_api_ping",
-                "interval": "15s",
-                "method": "GET",
-                "name": "Nexus NPM QA read repository ping",
-                "timeout": "5s"
-              }
-            ],
-            "enable_tag_override": false,
-            "id": "nexus_npm_qa_read_api",
-            "name": "npm",
-            "port": #{nexus_management_port},
-            "tags": [
-              "read-qa"
-            ]
-          }
-        ]
-      }
-    JSON
-    it 'creates the /etc/consul/conf.d/nexus-npm-qa-read.json' do
-      expect(chef_run).to create_file('/etc/consul/conf.d/nexus-npm-qa-read.json')
-        .with_content(consul_nexus_npm_qa_read_config_content)
-    end
-
-    consul_nexus_npm_qa_write_config_content = <<~JSON
-      {
-        "services": [
-          {
-            "checks": [
-              {
-                "header": { "Authorization" : ["Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo"]},
-                "http": "http://localhost:#{nexus_management_port}#{nexus_proxy_path}/service/metrics/ping",
-                "id": "nexus_npm_qa_write_api_ping",
-                "interval": "15s",
-                "method": "GET",
-                "name": "Nexus NPM QA write repository ping",
-                "timeout": "5s"
-              }
-            ],
-            "enable_tag_override": false,
-            "id": "nexus_npm_qa_write_api",
-            "name": "npm",
-            "port": #{nexus_management_port},
-            "tags": [
-              "write-qa"
-            ]
-          }
-        ]
-      }
-    JSON
-    it 'creates the /etc/consul/conf.d/nexus-npm-qa-write.json' do
-      expect(chef_run).to create_file('/etc/consul/conf.d/nexus-npm-qa-write.json')
-        .with_content(consul_nexus_npm_qa_write_config_content)
     end
   end
 
