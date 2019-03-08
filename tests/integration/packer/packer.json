@@ -18,7 +18,7 @@
         {
             "boot_wait": "90s",
             "boot_command": [],
-            "clone_from_vmxc_path": "{{ user `dir_temp` }}/{{ user `vm_name` }}/resource",
+            "clone_from_vmcx_path": "{{ user `dir_temp` }}/{{ user `vm_name` }}/resource",
             "communicator": "ssh",
             "enable_dynamic_memory": false,
             "enable_mac_spoofing": false,
