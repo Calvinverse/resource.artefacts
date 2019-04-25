@@ -252,12 +252,26 @@ describe 'resource_artefacts::nexus' do
           )
         );
 
-        def role = security.addRole(
+        def adminRole = security.addRole(
           '{{ key "config/environment/directory/query/groups/artefacts/administrators" }}',
           'ldap-administrators',
-          'Mapping {{ key "config/environment/directory/query/groups/artefacts/administrators" }} to nx-admin for {{ key "/config/environment/directory/name" }}',
+          'Mapping {{ key "config/environment/directory/query/groups/artefacts/administrators" }} to [nx-admin] for {{ key "/config/environment/directory/name" }}',
           [],
           ['nx-admin']);
+
+        def userRole = security.addRole(
+          '{{ key "config/environment/directory/query/groups/artefacts/developers" }}',
+          'ldap-developers',
+          'Mapping {{ key "config/environment/directory/query/groups/artefacts/developers" }} to [nx-developer-artefacts, nx-developer-docker, nx-developer-npm, nx-developer-nuget, nx-developer-search] for {{ key "/config/environment/directory/name" }}',
+          [],
+          ['nx-developer-artefacts', 'nx-developer-docker', 'nx-developer-npm', 'nx-developer-nuget', 'nx-developer-search']);
+
+        def buildServerRole = security.addRole(
+          '{{ key "config/environment/directory/query/groups/artefacts/buildserver" }}',
+          'ldap-buildserver',
+          'Mapping {{ key "config/environment/directory/query/groups/artefacts/buildserver" }} to [nx-builds-pull-artefacts, nx-builds-pull-containers, nx-builds-pull-npm, nx-builds-pull-nuget, nx-builds-push-artefacts, nx-builds-push-containers, nx-builds-push-npm, nx-builds-push-nuget] for {{ key "/config/environment/directory/name" }}',
+          [],
+          ['nx-builds-pull-artefacts', 'nx-builds-pull-containers', 'nx-builds-pull-npm', 'nx-builds-pull-nuget', 'nx-builds-push-artefacts', 'nx-builds-push-containers', 'nx-builds-push-npm', 'nx-builds-push-nuget']);
 
         security.securitySystem.deleteUser('admin', 'default');
         EOT
