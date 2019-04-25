@@ -125,7 +125,7 @@ file "#{consul_template_template_path}/#{telegraf_jolokia_inputs_template_file}"
     [[inputs.http]]
       ## One or more URLs from which to read formatted metrics
       urls = [
-        "http://localhost:#{nexus_management_port}#{nexus_proxy_path}/service/metrics/data"
+        "http://127.0.0.1:#{nexus_management_port}#{nexus_proxy_path}/service/metrics/data"
       ]
 
       ## HTTP method

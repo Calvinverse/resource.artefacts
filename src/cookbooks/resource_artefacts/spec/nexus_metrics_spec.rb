@@ -2,6 +2,9 @@
 
 require 'spec_helper'
 
+nexus_management_port = 8081
+nexus_proxy_path = '/artefacts'
+
 describe 'resource_artefacts::nexus_metrics' do
   context 'installs jolokia' do
     let(:chef_run) { ChefSpec::SoloRunner.converge(described_recipe) }
@@ -103,7 +106,7 @@ describe 'resource_artefacts::nexus_metrics' do
         [[inputs.http]]
           ## One or more URLs from which to read formatted metrics
           urls = [
-            "http://localhost:#{nexus_management_port}#{nexus_proxy_path}/service/metrics/data"
+            "http://127.0.0.1:#{nexus_management_port}#{nexus_proxy_path}/service/metrics/data"
           ]
 
           ## HTTP method
