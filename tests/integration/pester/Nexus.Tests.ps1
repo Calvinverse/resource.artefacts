@@ -17,7 +17,7 @@ Describe 'The Nexus artefact server' {
         $expectedContent = @'
 [Service]
 Type = forking
-ExecStart = /opt/nexus/bin/nexus start
+ExecStart = /bin/sh -c "/opt/nexus/bin/set_jvm_properties.sh && /opt/nexus/bin/nexus start"
 ExecStop = /opt/nexus/bin/nexus stop
 Restart = on-abort
 User = nexus
