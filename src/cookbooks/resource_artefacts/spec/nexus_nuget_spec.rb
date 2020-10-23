@@ -76,20 +76,20 @@ describe 'resource_artefacts::nexus_nuget' do
             "checks": [
               {
                 "header": { "Authorization" : ["Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo"]},
-                "http": "http://localhost:#{nexus_management_port}#{nexus_proxy_path}/service/metrics/ping",
-                "id": "nexus_nuget_production_read_api_ping",
+                "http": "http://localhost:#{nexus_management_port}#{nexus_proxy_path}/service/rest/v1/status",
+                "id": "nexus_nuget_production_read_status",
                 "interval": "15s",
                 "method": "GET",
-                "name": "Nexus NuGet Production read repository ping",
+                "name": "Nexus NuGet Production repository read status",
                 "timeout": "5s"
               }
             ],
             "enable_tag_override": false,
-            "id": "nexus_nuget_production_read_api",
-            "name": "artefacts",
+            "id": "nexus_nuget_production_read",
+            "name": "nuget",
             "port": #{nexus_management_port},
             "tags": [
-              "read-production-nuget"
+              "read-production"
             ]
           }
         ]
@@ -107,20 +107,20 @@ describe 'resource_artefacts::nexus_nuget' do
             "checks": [
               {
                 "header": { "Authorization" : ["Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo"]},
-                "http": "http://localhost:#{nexus_management_port}#{nexus_proxy_path}/service/metrics/ping",
-                "id": "nexus_nuget_production_write_api_ping",
+                "http": "http://localhost:#{nexus_management_port}#{nexus_proxy_path}/service/rest/v1/status/writable",
+                "id": "nexus_nuget_production_write_status",
                 "interval": "15s",
                 "method": "GET",
-                "name": "Nexus NuGet Production write repository ping",
+                "name": "Nexus NuGet Production repository write status",
                 "timeout": "5s"
               }
             ],
             "enable_tag_override": false,
-            "id": "nexus_nuget_production_write_api",
-            "name": "artefacts",
+            "id": "nexus_nuget_production_write",
+            "name": "nuget",
             "port": #{nexus_management_port},
             "tags": [
-              "write-production-nuget"
+              "write-production"
             ]
           }
         ]
@@ -147,7 +147,7 @@ describe 'resource_artefacts::nexus_nuget' do
       expect(chef_run).to run_nexus3_api('role-builds-push-nuget').with(
         content: "security.addRole('nx-builds-push-nuget', 'nx-builds-push-nuget'," \
         " 'User with privileges to allow pushing packages to the different nuget repositories'," \
-        " ['nx-repository-view-nuget-*-browse', 'nx-repository-view-nuget-*-read', 'nx-repository-view-nuget-*-add', 'nx-repository-view-nuget-*-edit'], [''])"
+        " ['nx-apikey-all', 'nx-repository-view-nuget-*-browse', 'nx-repository-view-nuget-*-read', 'nx-repository-view-nuget-*-add', 'nx-repository-view-nuget-*-edit'], [''])"
       )
     end
 

@@ -5,6 +5,16 @@ Describe 'The Nexus artefact server' {
         }
     }
 
+    Context 'the old daemon has been removed' {
+        $serviceConfigurationPath = '/etc/systemd/system/nexus3_nexus.service'
+        if (Test-Path $serviceConfigurationPath)
+        {
+            It 'should not have a systemd configuration' {
+               $false | Should Be $true
+            }
+        }
+    }
+
     Context 'has been daemonized' {
         $serviceConfigurationPath = '/etc/systemd/system/nexus.service'
         if (-not (Test-Path $serviceConfigurationPath))
@@ -17,7 +27,7 @@ Describe 'The Nexus artefact server' {
         $expectedContent = @'
 [Service]
 Type = forking
-ExecStart = /opt/nexus/bin/nexus start
+ExecStart = /bin/sh -c "/opt/nexus/bin/set_jvm_properties.sh && /opt/nexus/bin/nexus start"
 ExecStop = /opt/nexus/bin/nexus stop
 Restart = on-abort
 User = nexus
@@ -38,37 +48,17 @@ WantedBy = multi-user.target
 
             $systemctlOutput | Should Not Be $null
             $systemctlOutput.GetType().FullName | Should Be 'System.Object[]'
-            $systemctlOutput.Length | Should BeGreaterThan 3
+            $systemctlOutput.Length | Should Be 3
             $systemctlOutput[0] | Should Match 'nexus.service - nexus'
         }
 
         It 'that is enabled' {
-            $systemctlOutput[1] | Should Match 'Loaded:\sloaded\s\(.*;\senabled;.*\)'
+            $systemctlOutput[1] | Should Match 'Loaded:\sloaded\s\(.*;\sdisabled;.*\)'
 
         }
 
         It 'and is running' {
-            $systemctlOutput[2] | Should Match 'Active:\sactive\s\(running\).*'
-        }
-    }
-
-    Context 'can be contacted' {
-        $response = Invoke-WebRequest `
-            -Uri http://localhost:8081/artefacts/service/metrics/ping `
-            -Headers @{ Authorization = 'Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo' } `
-            -UseBasicParsing
-        It 'responds to a HTTP ping calls' {
-            $response.StatusCode | Should Be 200
-        }
-
-        $response = Invoke-WebRequest `
-            -Uri http://localhost:8081/artefacts/service/metrics/healthcheck `
-            -Headers @{ Authorization = 'Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo' } `
-            -UseBasicParsing
-        $healthInformation = ConvertFrom-Json $response.Content
-        It 'responds to a HTTP health check calls' {
-            $response.StatusCode | Should Be 200
-            $healthInformation | Should Not Be $null
+            $systemctlOutput[2] | Should Match 'Active:\sinactive\s\(dead\).*'
         }
     }
 }

@@ -22,11 +22,19 @@ include_recipe 'resource_artefacts::meta'
 include_recipe 'resource_artefacts::provisioning'
 
 include_recipe 'resource_artefacts::java'
+
 include_recipe 'resource_artefacts::nexus'
+
+include_recipe 'resource_artefacts::nexus_api_scripts'
+
 include_recipe 'resource_artefacts::nexus_artefacts'
 include_recipe 'resource_artefacts::nexus_docker'
 include_recipe 'resource_artefacts::nexus_gems'
 include_recipe 'resource_artefacts::nexus_npm'
 include_recipe 'resource_artefacts::nexus_nuget'
 include_recipe 'resource_artefacts::nexus_metrics'
+include_recipe 'resource_artefacts::nexus_backup'
+include_recipe 'resource_artefacts::nexus_restore'
+
+# This has to be last because it stops the Nexus service and then replaces it
 include_recipe 'resource_artefacts::nexus_service'

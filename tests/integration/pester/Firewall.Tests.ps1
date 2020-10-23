@@ -5,7 +5,7 @@ Describe 'The firewall' {
         It 'should return a status' {
             $ufwOutput | Should Not Be $null
             $ufwOutput.GetType().FullName | Should Be 'System.Object[]'
-            $ufwOutput.Length | Should Be 49
+            $ufwOutput.Length | Should Be 51
         }
 
         It 'should be enabled' {
@@ -98,6 +98,10 @@ Describe 'The firewall' {
     Context 'should allow telegraf' {
         It 'on TCP port 8125' {
             ($ufwOutput | Where-Object {$_ -match '(8125/tcp)\s*(ALLOW)\s*(Anywhere)'} ) | Should Not Be $null
+        }
+
+        It 'on TCP port 9090' {
+            ($ufwOutput | Where-Object {$_ -match '(9090/tcp)\s*(ALLOW)\s*(Anywhere)'} ) | Should Not Be $null
         }
     }
 

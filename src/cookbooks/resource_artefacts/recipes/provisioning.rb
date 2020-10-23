@@ -13,7 +13,7 @@ file '/etc/init.d/provision_image.sh' do
     #!/bin/bash
 
     function f_provisionImage {
-      sudo systemctl enable nexus.service
+      sudo systemctl enable restore.service
     }
   BASH
   mode '755'
