@@ -46,13 +46,25 @@ nexus3_api 'artefacts-qa-write' do
   action %i[create run delete]
 end
 
+blob_name_artefacts_development = 'artefacts_development'
+nexus3_api 'artefacts-development-blob' do
+  content "blobStore.createFileBlobStore('#{blob_name_artefacts_development}', '#{artefact_blob_store_path}/#{blob_name_artefacts_development}')"
+  action %i[create run delete]
+end
+
+repository_name_artefacts_development = 'artefacts-development'
+nexus3_api 'artefacts-development-write' do
+  content "import org.sonatype.nexus.repository.storage.WritePolicy; repository.createRawHosted('#{repository_name_artefacts_development}', '#{blob_name_artefacts_development}', true, WritePolicy.ALLOW)"
+  action %i[create run delete]
+end
+
 #
 # CONNECT TO CONSUL
 #
 
 nexus_management_port = node['nexus3']['port']
 nexus_proxy_path = node['nexus3']['proxy_path']
-file '/etc/consul/conf.d/nexus-artefacts-production.json' do
+file '/etc/consul/conf.d/nexus-artefacts-production-read.json' do # ~FC005
   action :create
   content <<~JSON
     {
@@ -61,20 +73,49 @@ file '/etc/consul/conf.d/nexus-artefacts-production.json' do
           "checks": [
             {
               "header": { "Authorization" : ["Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo"]},
-              "http": "http://localhost:#{nexus_management_port}#{nexus_proxy_path}/service/metrics/ping",
-              "id": "nexus_artefacts_production_api_ping",
+              "http": "http://localhost:#{nexus_management_port}#{nexus_proxy_path}/service/rest/v1/status",
+              "id": "nexus_artefacts_production_read_status",
               "interval": "15s",
               "method": "GET",
-              "name": "Nexus artefacts production repository ping",
+              "name": "Nexus artefacts production repository read status",
               "timeout": "5s"
             }
           ],
           "enable_tag_override": false,
-          "id": "nexus_artefacts_production_api",
+          "id": "nexus_artefacts_production_read",
           "name": "artefacts",
           "port": #{nexus_management_port},
           "tags": [
-            "read-production",
+            "read-production"
+          ]
+        }
+      ]
+    }
+  JSON
+end
+
+file '/etc/consul/conf.d/nexus-artefacts-production-write.json' do # ~FC005
+  action :create
+  content <<~JSON
+    {
+      "services": [
+        {
+          "checks": [
+            {
+              "header": { "Authorization" : ["Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo"]},
+              "http": "http://localhost:#{nexus_management_port}#{nexus_proxy_path}/service/rest/v1/status/writable",
+              "id": "nexus_artefacts_production_write_status",
+              "interval": "15s",
+              "method": "GET",
+              "name": "Nexus artefacts production repository write status",
+              "timeout": "5s"
+            }
+          ],
+          "enable_tag_override": false,
+          "id": "nexus_artefacts_production_write",
+          "name": "artefacts",
+          "port": #{nexus_management_port},
+          "tags": [
             "write-production"
           ]
         }
@@ -83,7 +124,7 @@ file '/etc/consul/conf.d/nexus-artefacts-production.json' do
   JSON
 end
 
-file '/etc/consul/conf.d/nexus-artefacts-qa.json' do
+file '/etc/consul/conf.d/nexus-artefacts-qa-read.json' do
   action :create
   content <<~JSON
     {
@@ -92,21 +133,110 @@ file '/etc/consul/conf.d/nexus-artefacts-qa.json' do
           "checks": [
             {
               "header": { "Authorization" : ["Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo"]},
-              "http": "http://localhost:#{nexus_management_port}#{nexus_proxy_path}/service/metrics/ping",
-              "id": "nexus_artefacts_qa_api_ping",
+              "http": "http://localhost:#{nexus_management_port}#{nexus_proxy_path}/service/rest/v1/status",
+              "id": "nexus_artefacts_qa_read_status",
               "interval": "15s",
               "method": "GET",
-              "name": "Nexus artefacts QA repository ping",
+              "name": "Nexus artefacts QA repository read status",
               "timeout": "5s"
             }
           ],
           "enable_tag_override": false,
-          "id": "nexus_artefacts_qa_api",
+          "id": "nexus_artefacts_qa_read",
           "name": "artefacts",
           "port": #{nexus_management_port},
           "tags": [
-            "read-qa",
+            "read-qa"
+          ]
+        }
+      ]
+    }
+  JSON
+end
+
+file '/etc/consul/conf.d/nexus-artefacts-qa-write.json' do
+  action :create
+  content <<~JSON
+    {
+      "services": [
+        {
+          "checks": [
+            {
+              "header": { "Authorization" : ["Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo"]},
+              "http": "http://localhost:#{nexus_management_port}#{nexus_proxy_path}/service/rest/v1/status/writable",
+              "id": "nexus_artefacts_qa_write_status",
+              "interval": "15s",
+              "method": "GET",
+              "name": "Nexus artefacts QA repository write status",
+              "timeout": "5s"
+            }
+          ],
+          "enable_tag_override": false,
+          "id": "nexus_artefacts_qa_write",
+          "name": "artefacts",
+          "port": #{nexus_management_port},
+          "tags": [
             "write-qa"
+          ]
+        }
+      ]
+    }
+  JSON
+end
+
+file '/etc/consul/conf.d/nexus-artefacts-development-read.json' do
+  action :create
+  content <<~JSON
+    {
+      "services": [
+        {
+          "checks": [
+            {
+              "header": { "Authorization" : ["Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo"]},
+              "http": "http://localhost:#{nexus_management_port}#{nexus_proxy_path}/service/rest/v1/status",
+              "id": "nexus_artefacts_development_read_status",
+              "interval": "15s",
+              "method": "GET",
+              "name": "Nexus artefacts Development repository read status",
+              "timeout": "5s"
+            }
+          ],
+          "enable_tag_override": false,
+          "id": "nexus_artefacts_development_read",
+          "name": "artefacts",
+          "port": #{nexus_management_port},
+          "tags": [
+            "read-development"
+          ]
+        }
+      ]
+    }
+  JSON
+end
+
+file '/etc/consul/conf.d/nexus-artefacts-development-write.json' do
+  action :create
+  content <<~JSON
+    {
+      "services": [
+        {
+          "checks": [
+            {
+              "header": { "Authorization" : ["Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo"]},
+              "http": "http://localhost:#{nexus_management_port}#{nexus_proxy_path}/service/rest/v1/status/writable",
+              "id": "nexus_artefacts_development_write_status",
+              "interval": "15s",
+              "method": "GET",
+              "name": "Nexus artefacts Development repository write status",
+              "timeout": "5s"
+            }
+          ],
+          "enable_tag_override": false,
+          "id": "nexus_artefacts_development_write",
+          "name": "artefacts",
+          "port": #{nexus_management_port},
+          "tags": [
+            "write-development"
           ]
         }
       ]
@@ -123,7 +253,7 @@ nexus3_api 'role-builds-pull-artefacts' do
   content "security.addRole('nx-builds-pull-artefacts', 'nx-builds-pull-artefacts'," \
     " 'User with privileges to allow pulling artefacts from the different repositories'," \
     " ['nx-repository-view-raw-*-browse', 'nx-repository-view-raw-*-read'], [''])"
-  action :run
+  action %i[create run delete]
 end
 
 # Create the role which is used by the build system for pushing artefacts
@@ -131,7 +261,7 @@ nexus3_api 'role-builds-push-artefacts' do
   content "security.addRole('nx-builds-push-artefacts', 'nx-builds-push-artefacts'," \
     " 'User with privileges to allow pushing artefacts to the different repositories'," \
     " ['nx-repository-view-raw-*-browse', 'nx-repository-view-raw-*-read', 'nx-repository-view-raw-*-add', 'nx-repository-view-raw-*-edit'], [''])"
-  action :run
+  action %i[create run delete]
 end
 
 # Create the role which is used by the developers to read artefact repositories
@@ -139,5 +269,5 @@ nexus3_api 'role-developer-artefacts' do
   content "security.addRole('nx-developer-artefacts', 'nx-developer-artefacts'," \
     " 'User with privileges to allow pulling artefacts'," \
     " ['nx-repository-view-raw-*-browse', 'nx-repository-view-raw-*-read'], [''])"
-  action :run
+  action %i[create run delete]
 end

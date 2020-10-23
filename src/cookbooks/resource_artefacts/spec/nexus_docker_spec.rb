@@ -54,7 +54,7 @@ describe 'resource_artefacts::nexus_docker' do
     groovy_docker_mirror_content = <<~GROOVY
       import org.sonatype.nexus.repository.config.Configuration;
       configuration = new Configuration(
-          repositoryName: 'hub.docker.io',
+          repositoryName: 'docker-proxy',
           recipeName: 'docker-proxy',
           online: true,
           attributes: [
@@ -213,20 +213,20 @@ describe 'resource_artefacts::nexus_docker' do
             "checks": [
               {
                 "header": { "Authorization" : ["Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo"]},
-                "http": "http://localhost:#{nexus_management_port}#{nexus_proxy_path}/service/metrics/ping",
-                "id": "nexus_docker_production_read_api_ping",
+                "http": "http://localhost:#{nexus_management_port}#{nexus_proxy_path}/service/rest/v1/status",
+                "id": "nexus_docker_production_read_status",
                 "interval": "15s",
                 "method": "GET",
-                "name": "Nexus Docker Production read repository ping",
+                "name": "Nexus Docker Production repository read status",
                 "timeout": "5s"
               }
             ],
             "enable_tag_override": false,
-            "id": "nexus_docker_production_read_api",
-            "name": "artefacts",
+            "id": "nexus_docker_production_read",
+            "name": "docker",
             "port": 5000,
             "tags": [
-              "read-production-docker"
+              "read-production"
             ]
           }
         ]
@@ -244,20 +244,20 @@ describe 'resource_artefacts::nexus_docker' do
             "checks": [
               {
                 "header": { "Authorization" : ["Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo"]},
-                "http": "http://localhost:#{nexus_management_port}#{nexus_proxy_path}/service/metrics/ping",
-                "id": "nexus_docker_production_write_api_ping",
+                "http": "http://localhost:#{nexus_management_port}#{nexus_proxy_path}/service/rest/v1/status/writable",
+                "id": "nexus_docker_production_write_status",
                 "interval": "15s",
                 "method": "GET",
-                "name": "Nexus Docker Production write repository ping",
+                "name": "Nexus Docker Production repository write status",
                 "timeout": "5s"
               }
             ],
             "enable_tag_override": false,
-            "id": "nexus_docker_production_write_api",
-            "name": "artefacts",
+            "id": "nexus_docker_production_write",
+            "name": "docker",
             "port": 5002,
             "tags": [
-              "write-production-docker"
+              "write-production"
             ]
           }
         ]
@@ -275,20 +275,20 @@ describe 'resource_artefacts::nexus_docker' do
             "checks": [
               {
                 "header": { "Authorization" : ["Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo"]},
-                "http": "http://localhost:#{nexus_management_port}#{nexus_proxy_path}/service/metrics/ping",
-                "id": "nexus_docker_qa_read_api_ping",
+                "http": "http://localhost:#{nexus_management_port}#{nexus_proxy_path}/service/rest/v1/status",
+                "id": "nexus_docker_qa_read_status",
                 "interval": "15s",
                 "method": "GET",
-                "name": "Nexus Docker QA read repository ping",
+                "name": "Nexus Docker QA repository read status",
                 "timeout": "5s"
               }
             ],
             "enable_tag_override": false,
-            "id": "nexus_docker_qa_read_api",
-            "name": "artefacts",
+            "id": "nexus_docker_qa_read",
+            "name": "docker",
             "port": 5010,
             "tags": [
-              "read-qa-docker"
+              "read-qa"
             ]
           }
         ]
@@ -306,20 +306,20 @@ describe 'resource_artefacts::nexus_docker' do
             "checks": [
               {
                 "header": { "Authorization" : ["Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo"]},
-                "http": "http://localhost:#{nexus_management_port}#{nexus_proxy_path}/service/metrics/ping",
-                "id": "nexus_docker_qa_write_api_ping",
+                "http": "http://localhost:#{nexus_management_port}#{nexus_proxy_path}/service/rest/v1/status/writable",
+                "id": "nexus_docker_qa_write_status",
                 "interval": "15s",
                 "method": "GET",
-                "name": "Nexus Docker QA write repository ping",
+                "name": "Nexus Docker QA repository write status",
                 "timeout": "5s"
               }
             ],
             "enable_tag_override": false,
-            "id": "nexus_docker_qa_write_api",
-            "name": "artefacts",
+            "id": "nexus_docker_qa_write",
+            "name": "docker",
             "port": 5012,
             "tags": [
-              "write-qa-docker"
+              "write-qa"
             ]
           }
         ]
@@ -344,7 +344,7 @@ describe 'resource_artefacts::nexus_docker' do
 
     it 'create a nomad user' do
       expect(chef_run).to run_nexus3_api('userNomad').with(
-        content: "security.addUser('nomad.container.pull', 'Nomad', 'Container.Pull', 'nomad.container.pull@example.com', true, 'nomad.container.pull', ['nx-infrastructure-container-pull'])"
+        content: "security.addUser('container.pull', 'Container', 'Pull', 'container.pull@calvinverse.net', true, 'container.pull', ['nx-infrastructure-container-pull'])"
       )
     end
 

@@ -18,7 +18,7 @@
         {
             "boot_wait": "90s",
             "boot_command": [],
-            "clone_from_vmxc_path": "{{ user `dir_temp` }}/{{ user `vm_name` }}/resource",
+            "clone_from_vmcx_path": "{{ user `dir_temp` }}/{{ user `vm_name` }}/resource",
             "communicator": "ssh",
             "enable_dynamic_memory": false,
             "enable_mac_spoofing": false,
@@ -30,8 +30,8 @@
             "http_directory": "{{ user `dir_http_user` }}",
             "http_port_min": 8150,
             "http_port_max": 8160,
+            "memory": "{{ user `vm_ram_size_in_mb` }}",
             "output_directory": "{{ user `dir_temp` }}/test-{{ user `vm_name` }}",
-            "ram_size": "{{ user `vm_ram_size_in_mb` }}",
             "secondary_iso_images": [
                 "{{ user `dir_deploy` }}/{{ user `product_name` }}-test-provision.iso"
             ],
@@ -44,6 +44,7 @@
             "ssh_timeout": "4h",
             "ssh_username": "{{user `admin_username`}}",
             "switch_name": "{{user `vm_switch_name`}}",
+            "switch_vlan_id": "{{ user `vm_switch_vlan` }}",
             "type": "hyperv-vmcx",
             "vlan_id": "{{ user `vm_switch_vlan` }}",
             "vm_name": "test-{{ user `vm_name` }}"

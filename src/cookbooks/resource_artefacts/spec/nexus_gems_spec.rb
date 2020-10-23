@@ -32,20 +32,20 @@ describe 'resource_artefacts::nexus_gems' do
             "checks": [
               {
                 "header": { "Authorization" : ["Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo"]},
-                "http": "http://localhost:#{nexus_management_port}#{nexus_proxy_path}/service/metrics/ping",
-                "id": "nexus_gems_mirror_api_ping",
+                "http": "http://localhost:#{nexus_management_port}#{nexus_proxy_path}/service/rest/v1/status",
+                "id": "nexus_gems_mirror_read_status",
                 "interval": "15s",
                 "method": "GET",
-                "name": "Nexus Ruby Gems mirror repository ping",
+                "name": "Nexus Ruby Gems mirror repository read status",
                 "timeout": "5s"
               }
             ],
             "enable_tag_override": false,
-            "id": "nexus_gems_mirror_api",
-            "name": "artefacts",
+            "id": "nexus_gems_mirror_read",
+            "name": "gems",
             "port": #{nexus_management_port},
             "tags": [
-              "read-mirror-gems"
+              "read-production"
             ]
           }
         ]

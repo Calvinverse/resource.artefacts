@@ -29,9 +29,9 @@ describe 'resource_artefacts::nexus' do
       expect(chef_run).to install_nexus3('nexus')
     end
 
-    it 'disables anonymous access' do
+    it 'enables anonymous access' do
       expect(chef_run).to run_nexus3_api('anonymous').with(
-        content: 'security.setAnonymousAccess(false)'
+        content: 'security.setAnonymousAccess(true)'
       )
     end
 
@@ -107,7 +107,7 @@ describe 'resource_artefacts::nexus' do
 
     it 'create a consul user' do
       expect(chef_run).to run_nexus3_api('userConsul').with(
-        content: "security.addUser('consul.health', 'Consul', 'Health', 'consul.health@example.com', true, 'consul.health', ['nx-metrics'])"
+        content: "security.addUser('consul.health', 'Consul', 'Health', 'consul.health@calvinverse.net', true, 'consul.health', ['nx-healthcheck-read', 'nx-healthcheck-summary-read'])"
       )
     end
 
@@ -118,11 +118,11 @@ describe 'resource_artefacts::nexus' do
             "checks": [
               {
                 "header": { "Authorization" : ["Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo"]},
-                "http": "http://localhost:#{nexus_management_port}#{nexus_proxy_path}/service/metrics/ping",
-                "id": "nexus_management_api_ping",
+                "http": "http://localhost:#{nexus_management_port}#{nexus_proxy_path}/service/rest/v1/status",
+                "id": "nexus_management_status",
                 "interval": "15s",
                 "method": "GET",
-                "name": "Nexus management ping",
+                "name": "Nexus management status",
                 "timeout": "5s"
               }
             ],
@@ -170,50 +170,55 @@ describe 'resource_artefacts::nexus' do
     end
 
     it 'create a consul template user' do
-      ldap_config_username = node['nexus3']['user']['ldap_config']['username']
-      ldap_config_password = node['nexus3']['user']['ldap_config']['password']
+      ldap_config_username = node['nexus3']['users']['ldap_config']['username']
+      ldap_config_password = node['nexus3']['users']['ldap_config']['password']
       expect(chef_run).to run_nexus3_api('user-consul-template').with(
-        content: "security.addUser('#{ldap_config_username}', 'Consul', 'Template', 'consul.template@localhost.example.com', true, '#{ldap_config_password}', ['role-consul-template-local'])"
+        content: "security.addUser('#{ldap_config_username}', 'Consul', 'Template', 'consul.template@calvinverse.net', true, '#{ldap_config_password}', ['role-consul-template-local'])"
       )
     end
 
     it 'creates nexus ldap script template file in the consul-template template directory' do
-      ldap_config_username = node['nexus3']['user']['ldap_config']['username']
-      ldap_config_password = node['nexus3']['user']['ldap_config']['password']
-      nexus_instance_name = 'nexus'
+      ldap_config_username = node['nexus3']['users']['ldap_config']['username']
+      ldap_config_password = node['nexus3']['users']['ldap_config']['password']
+      nexus_service_name = 'nexus'
+
+      flag_restore = '/var/log/restore.flag'
 
       nexus_ldap_script_template_content = <<~CONF
         #!/bin/sh
 
+        # The restore service is: {{ file "#{flag_restore}" }}
         {{ if keyExists "config/environment/directory/initialized" }}
 
-        run_nexus_script() {
-          name=$1
-          file=$2
-          host=$3
-          username=$4
-          password=$5
+        if [ "$(cat #{flag_restore})" = "Done" ]; then
 
-          content=$(tr -d '\n' < $file)
-          cat <<EOT > "/tmp/$name.json"
+          run_nexus_script() {
+            name=$1
+            file=$2
+            host=$3
+            username=$4
+            password=$5
+
+            content=$(tr -d '\n' < $file)
+            cat <<EOT > "/tmp/$name.json"
         {
           "name": "$name",
           "type": "groovy",
           "content": "$content"
         }
         EOT
-          curl -v -X POST -u "$username:$password" --header "Content-Type: application/json" "$host#{nexus_proxy_path}/service/rest/v1/script" -d @"/tmp/$name.json"
-          echo "Published $file as $name"
+            curl --request POST --silent --show-error --fail --retry 10 --retry-delay 10 -u "$username:$password" --header "Content-Type: application/json" "$host#{nexus_proxy_path}/service/rest/v1/script" -d @"/tmp/$name.json"
+            echo "Published $file as $name"
 
-          curl -v -X POST -u "$username:$password" --header "Content-Type: text/plain" "$host#{nexus_proxy_path}/service/rest/v1/script/$name/run"
-          echo "Successfully executed $name script"
+            curl --request POST --silent --show-error --fail --retry 10 --retry-delay 10 -u "$username:$password" --header "Content-Type: text/plain" "$host#{nexus_proxy_path}/service/rest/v1/script/$name/run"
+            echo "Successfully executed $name script"
 
-          curl -v -X DELETE -u "$username:$password" "$host#{nexus_proxy_path}/service/rest/v1/script/$name"
-          echo "Deleted script $name"
-        }
+            curl --request DELETE --silent --show-error --fail --retry 10 --retry-delay 10 -u "$username:$password" "$host#{nexus_proxy_path}/service/rest/v1/script/$name"
+            echo "Deleted script $name"
+          }
 
-        echo 'Write the script to configure LDAP in Nexus'
-        cat <<EOT > /tmp/nexus_ldap.groovy
+          echo 'Write the script to configure LDAP in Nexus'
+          cat <<EOT > /tmp/nexus_ldap.groovy
         import org.sonatype.nexus.ldap.persist.*;
         import org.sonatype.nexus.ldap.persist.entity.*;
         import org.sonatype.nexus.security.SecuritySystem;
@@ -252,41 +257,56 @@ describe 'resource_artefacts::nexus' do
           )
         );
 
-        def role = security.addRole(
+        def adminRole = security.addRole(
           '{{ key "config/environment/directory/query/groups/artefacts/administrators" }}',
           'ldap-administrators',
-          'Mapping {{ key "config/environment/directory/query/groups/artefacts/administrators" }} to nx-admin for {{ key "/config/environment/directory/name" }}',
+          'Mapping {{ key "config/environment/directory/query/groups/artefacts/administrators" }} to [nx-admin] for {{ key "/config/environment/directory/name" }}',
           [],
           ['nx-admin']);
+
+        def userRole = security.addRole(
+          '{{ key "config/environment/directory/query/groups/artefacts/developers" }}',
+          'ldap-developers',
+          'Mapping {{ key "config/environment/directory/query/groups/artefacts/developers" }} to [nx-developer-artefacts, nx-developer-docker, nx-developer-npm, nx-developer-nuget, nx-developer-search] for {{ key "/config/environment/directory/name" }}',
+          [],
+          ['nx-developer-artefacts', 'nx-developer-docker', 'nx-developer-npm', 'nx-developer-nuget', 'nx-developer-search']);
+
+        def buildServerRole = security.addRole(
+          '{{ key "config/environment/directory/query/groups/artefacts/buildserver" }}',
+          'ldap-buildserver',
+          'Mapping {{ key "config/environment/directory/query/groups/artefacts/buildserver" }} to [nx-builds-pull-artefacts, nx-builds-pull-containers, nx-builds-pull-npm, nx-builds-pull-nuget, nx-builds-push-artefacts, nx-builds-push-containers, nx-builds-push-npm, nx-builds-push-nuget] for {{ key "/config/environment/directory/name" }}',
+          [],
+          ['nx-builds-pull-artefacts', 'nx-builds-pull-containers', 'nx-builds-pull-npm', 'nx-builds-pull-nuget', 'nx-builds-push-artefacts', 'nx-builds-push-containers', 'nx-builds-push-npm', 'nx-builds-push-nuget']);
 
         security.securitySystem.deleteUser('admin', 'default');
         EOT
 
-        if ( ! $(systemctl is-enabled --quiet #{nexus_instance_name}) ); then
-          systemctl enable #{nexus_instance_name}
+          if ( ! $(systemctl is-enabled --quiet #{nexus_service_name}) ); then
+            systemctl enable #{nexus_service_name}
 
-          while true; do
-            if ( $(systemctl is-enabled --quiet #{nexus_instance_name}) ); then
-                break
-            fi
+            while true; do
+              if ( $(systemctl is-enabled --quiet #{nexus_service_name}) ); then
+                  break
+              fi
 
-            sleep 1
-          done
+              sleep 1
+            done
+          fi
+
+          if ( ! $(systemctl is-active --quiet #{nexus_service_name}) ); then
+            systemctl start #{nexus_service_name}
+
+            while true; do
+              if ( $(systemctl is-active --quiet #{nexus_service_name}) ); then
+                  break
+              fi
+
+              sleep 1
+            done
+          fi
+
+          run_nexus_script setLdap /tmp/nexus_ldap.groovy 'http://localhost:#{nexus_management_port}' '#{ldap_config_username}' '#{ldap_config_password}'
         fi
-
-        if ( ! $(systemctl is-active --quiet #{nexus_instance_name}) ); then
-          systemctl start #{nexus_instance_name}
-
-          while true; do
-            if ( $(systemctl is-active --quiet #{nexus_instance_name}) ); then
-                break
-            fi
-
-            sleep 1
-          done
-        fi
-
-        run_nexus_script setLdap /tmp/nexus_ldap.groovy 'http://localhost:#{nexus_management_port}' '#{ldap_config_username}' '#{ldap_config_password}'
 
         {{ else }}
         echo 'The LDAP information is not available in the Consul K-V. Will not update Nexus.'

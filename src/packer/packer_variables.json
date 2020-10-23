@@ -14,7 +14,7 @@
 
     "vm_import_directory": null,
     "vm_name": "${ImageName}",
-    "vm_ram_size_in_mb": "1024",
+    "vm_ram_size_in_mb": "2048",
     "vm_switch_name": "${VmSwitch}",
     "vm_switch_vlan": "${VmSwitchVlan}"
 }
