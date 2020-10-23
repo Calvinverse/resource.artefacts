@@ -35,8 +35,8 @@
             "http_directory": "{{ user `dir_http_user` }}",
             "http_port_min": 8150,
             "http_port_max": 8160,
+            "memory": "{{ user `vm_ram_size_in_mb` }}",
             "output_directory": "{{ user `dir_temp` }}/{{ user `vm_name` }}",
-            "ram_size": "{{ user `vm_ram_size_in_mb` }}",
             "secure_boot_template": "MicrosoftUEFICertificateAuthority",
             "shutdown_command": "echo '{{user `admin_password`}}' | sudo -S -E shutdown -P now",
             "shutdown_timeout": "5m",
@@ -94,12 +94,13 @@
             ],
             "type": "shell"
         },
+
         {
             "env_var_format": "$env:%s=\"%s\"; ",
             "execute_command": ["powershell.exe", "{{.Vars}} {{.Script}}"],
             "inline": [
-                "New-VHD -Path '{{ user `dir_temp` }}/{{ build_name }}/Virtual Hard Disks/nexus_scratch.vhdx' -SizeBytes 250GB -BlockSizeBytes 1MB",
-                "Add-VmHardDiskDrive -VMName {{ user `vm_name` }} -Path '{{ user `dir_temp` }}/{{build_name}}/Virtual Hard Disks/nexus_scratch.vhdx'"
+                "New-VHD -Path '{{ user `dir_temp` }}/{{ build_name }}/Virtual Hard Disks/nexus_artefacts.vhdx' -SizeBytes 350GB -BlockSizeBytes 1MB",
+                "Add-VmHardDiskDrive -VMName {{ user `vm_name` }} -Path '{{ user `dir_temp` }}/{{build_name}}/Virtual Hard Disks/nexus_artefacts.vhdx'"
             ],
             "tempfile_extension": ".ps1",
             "type": "shell-local"
@@ -108,28 +109,19 @@
             "expect_disconnect": false,
             "inline": [
                 "sudo rescan-scsi-bus.sh --remove --issue-lip",
-                "sudo mkdir -p /srv/nexus/blob/scratch",
+                "sudo mkdir -p /srv/nexus/blob/artefacts",
                 "sudo mkfs.ext4 /dev/sdb",
-                "echo \"UUID=$(sudo blkid -s UUID -o value /dev/sdb) /srv/nexus/blob/scratch ext4 defaults 0 0 \" | sudo tee -a /etc/fstab"
+                "echo \"UUID=$(sudo blkid -s UUID -o value /dev/sdb) /srv/nexus/blob/artefacts ext4 defaults 0 0 \" | sudo tee -a /etc/fstab"
             ],
             "pause_before" : "15s",
             "type": "shell"
         },
 
         {
-            "expect_disconnect": false,
-            "inline": [
-                "sudo lsblk -o NAME,FSTYPE,SIZE,MOUNTPOINT,LABEL",
-                "sudo fdisk -l",
-                "sudo blkid -s UUID -o value /dev/sda"
-            ],
-            "type": "shell"
-        },
-        {
             "env_var_format": "$env:%s=\"%s\"; ",
             "execute_command": ["powershell.exe", "{{.Vars}} {{.Script}}"],
             "inline": [
-                "New-VHD -Path '{{ user `dir_temp` }}/{{ build_name }}/Virtual Hard Disks/nexus_docker.vhdx' -SizeBytes 150GB -BlockSizeBytes 1MB",
+                "New-VHD -Path '{{ user `dir_temp` }}/{{ build_name }}/Virtual Hard Disks/nexus_docker.vhdx' -SizeBytes 300GB -BlockSizeBytes 1MB",
                 "Add-VmHardDiskDrive -VMName {{ user `vm_name` }} -Path '{{ user `dir_temp` }}/{{build_name}}/Virtual Hard Disks/nexus_docker.vhdx'"
             ],
             "tempfile_extension": ".ps1",
@@ -142,37 +134,6 @@
                 "sudo mkdir -p /srv/nexus/blob/docker",
                 "sudo mkfs.ext4 /dev/sdc",
                 "echo \"UUID=$(sudo blkid -s UUID -o value /dev/sdc) /srv/nexus/blob/docker ext4 defaults 0 0 \" | sudo tee -a /etc/fstab"
-            ],
-            "pause_before" : "15s",
-            "type": "shell"
-        },
-
-        {
-            "expect_disconnect": false,
-            "inline": [
-                "sudo lsblk -o NAME,FSTYPE,SIZE,MOUNTPOINT,LABEL",
-                "sudo fdisk -l",
-                "sudo blkid -s UUID -o value /dev/sda"
-            ],
-            "type": "shell"
-        },
-        {
-            "env_var_format": "$env:%s=\"%s\"; ",
-            "execute_command": ["powershell.exe", "{{.Vars}} {{.Script}}"],
-            "inline": [
-                "New-VHD -Path '{{ user `dir_temp` }}/{{ build_name }}/Virtual Hard Disks/nexus_nuget.vhdx' -SizeBytes 50GB -BlockSizeBytes 1MB",
-                "Add-VmHardDiskDrive -VMName {{ user `vm_name` }} -Path '{{ user `dir_temp` }}/{{build_name}}/Virtual Hard Disks/nexus_nuget.vhdx'"
-            ],
-            "tempfile_extension": ".ps1",
-            "type": "shell-local"
-        },
-        {
-            "expect_disconnect": false,
-            "inline": [
-                "sudo rescan-scsi-bus.sh --remove --issue-lip",
-                "sudo mkdir -p /srv/nexus/blob/nuget",
-                "sudo mkfs.ext4 /dev/sdd",
-                "echo \"UUID=$(sudo blkid -s UUID -o value /dev/sdd) /srv/nexus/blob/nuget ext4 defaults 0 0 \" | sudo tee -a /etc/fstab"
             ],
             "pause_before" : "15s",
             "type": "shell"
@@ -193,8 +154,8 @@
             "inline": [
                 "sudo rescan-scsi-bus.sh --remove --issue-lip",
                 "sudo mkdir -p /srv/nexus/blob/npm",
-                "sudo mkfs.ext4 /dev/sde",
-                "echo \"UUID=$(sudo blkid -s UUID -o value /dev/sde) /srv/nexus/blob/npm ext4 defaults 0 0 \" | sudo tee -a /etc/fstab"
+                "sudo mkfs.ext4 /dev/sdd",
+                "echo \"UUID=$(sudo blkid -s UUID -o value /dev/sdd) /srv/nexus/blob/npm ext4 defaults 0 0 \" | sudo tee -a /etc/fstab"
             ],
             "pause_before" : "15s",
             "type": "shell"
@@ -204,8 +165,8 @@
             "env_var_format": "$env:%s=\"%s\"; ",
             "execute_command": ["powershell.exe", "{{.Vars}} {{.Script}}"],
             "inline": [
-                "New-VHD -Path '{{ user `dir_temp` }}/{{ build_name }}/Virtual Hard Disks/nexus_artefacts.vhdx' -SizeBytes 350GB -BlockSizeBytes 1MB",
-                "Add-VmHardDiskDrive -VMName {{ user `vm_name` }} -Path '{{ user `dir_temp` }}/{{build_name}}/Virtual Hard Disks/nexus_artefacts.vhdx'"
+                "New-VHD -Path '{{ user `dir_temp` }}/{{ build_name }}/Virtual Hard Disks/nexus_nuget.vhdx' -SizeBytes 50GB -BlockSizeBytes 1MB",
+                "Add-VmHardDiskDrive -VMName {{ user `vm_name` }} -Path '{{ user `dir_temp` }}/{{build_name}}/Virtual Hard Disks/nexus_nuget.vhdx'"
             ],
             "tempfile_extension": ".ps1",
             "type": "shell-local"
@@ -214,9 +175,53 @@
             "expect_disconnect": false,
             "inline": [
                 "sudo rescan-scsi-bus.sh --remove --issue-lip",
-                "sudo mkdir -p /srv/nexus/blob/artefacts",
+                "sudo mkdir -p /srv/nexus/blob/nuget",
+                "sudo mkfs.ext4 /dev/sde",
+                "echo \"UUID=$(sudo blkid -s UUID -o value /dev/sde) /srv/nexus/blob/nuget ext4 defaults 0 0 \" | sudo tee -a /etc/fstab"
+            ],
+            "pause_before" : "15s",
+            "type": "shell"
+        },
+
+        {
+            "env_var_format": "$env:%s=\"%s\"; ",
+            "execute_command": ["powershell.exe", "{{.Vars}} {{.Script}}"],
+            "inline": [
+                "New-VHD -Path '{{ user `dir_temp` }}/{{ build_name }}/Virtual Hard Disks/nexus_scratch.vhdx' -SizeBytes 250GB -BlockSizeBytes 1MB",
+                "Add-VmHardDiskDrive -VMName {{ user `vm_name` }} -Path '{{ user `dir_temp` }}/{{build_name}}/Virtual Hard Disks/nexus_scratch.vhdx'"
+            ],
+            "tempfile_extension": ".ps1",
+            "type": "shell-local"
+        },
+        {
+            "expect_disconnect": false,
+            "inline": [
+                "sudo rescan-scsi-bus.sh --remove --issue-lip",
+                "sudo mkdir -p /srv/nexus/blob/scratch",
                 "sudo mkfs.ext4 /dev/sdf",
-                "echo \"UUID=$(sudo blkid -s UUID -o value /dev/sdf) /srv/nexus/blob/artefacts ext4 defaults 0 0 \" | sudo tee -a /etc/fstab"
+                "echo \"UUID=$(sudo blkid -s UUID -o value /dev/sdf) /srv/nexus/blob/scratch ext4 defaults 0 0 \" | sudo tee -a /etc/fstab"
+            ],
+            "pause_before" : "15s",
+            "type": "shell"
+        },
+
+        {
+            "env_var_format": "$env:%s=\"%s\"; ",
+            "execute_command": ["powershell.exe", "{{.Vars}} {{.Script}}"],
+            "inline": [
+                "New-VHD -Path '{{ user `dir_temp` }}/{{ build_name }}/Virtual Hard Disks/nexus_scratch_backup.vhdx' -SizeBytes 100GB -BlockSizeBytes 1MB",
+                "Add-VmHardDiskDrive -VMName {{ user `vm_name` }} -Path '{{ user `dir_temp` }}/{{build_name}}/Virtual Hard Disks/nexus_scratch_backup.vhdx'"
+            ],
+            "tempfile_extension": ".ps1",
+            "type": "shell-local"
+        },
+        {
+            "expect_disconnect": false,
+            "inline": [
+                "sudo rescan-scsi-bus.sh --remove --issue-lip",
+                "sudo mkdir -p /srv/backup/scratch",
+                "sudo mkfs.ext4 /dev/sdg",
+                "echo \"UUID=$(sudo blkid -s UUID -o value /dev/sdg) /srv/backup/scratch ext4 defaults 0 0 \" | sudo tee -a /etc/fstab"
             ],
             "pause_before" : "15s",
             "type": "shell"
@@ -243,7 +248,13 @@
             "inline": [
                 "sudo lsblk -o NAME,FSTYPE,SIZE,MOUNTPOINT,LABEL",
                 "sudo fdisk -l",
-                "sudo blkid -s UUID -o value /dev/sda"
+                "sudo blkid -s UUID -o value /dev/sda",
+                "sudo blkid -s UUID -o value /dev/sdb",
+                "sudo blkid -s UUID -o value /dev/sdc",
+                "sudo blkid -s UUID -o value /dev/sdd",
+                "sudo blkid -s UUID -o value /dev/sde",
+                "sudo blkid -s UUID -o value /dev/sdf",
+                "sudo blkid -s UUID -o value /dev/sdg"
             ],
             "type": "shell"
         },
@@ -252,7 +263,7 @@
             "cookbook_paths": [
                 "{{ user `dir_cookbooks_vendors` }}"
             ],
-            "execute_command": "sudo chef-solo --no-color -c {{.ConfigPath}} -j {{.JsonPath}}",
+            "execute_command": "sudo chef-solo --no-color -c {{.ConfigPath}} -j {{.JsonPath}} --chef-license accept-no-persist",
             "guest_os_type": "unix",
             "install_command": "echo \"Do nothing because chef should already be installed\"",
             "run_list": [

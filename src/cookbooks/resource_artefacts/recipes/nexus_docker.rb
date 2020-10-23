@@ -68,7 +68,7 @@ port_https_docker_mirror = node['nexus3']['repository']['docker']['port']['https
 groovy_docker_mirror_content = <<~GROOVY
   import org.sonatype.nexus.repository.config.Configuration;
   configuration = new Configuration(
-      repositoryName: 'hub.docker.io',
+      repositoryName: '#{repository_name_docker_mirror}',
       recipeName: '#{repository_name_docker_mirror}',
       online: true,
       attributes: [
@@ -222,16 +222,16 @@ file '/etc/consul/conf.d/nexus-docker-production-read.json' do # ~FC005
           "checks": [
             {
               "header": { "Authorization" : ["Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo"]},
-              "http": "http://localhost:#{nexus_management_port}#{nexus_proxy_path}/service/metrics/ping",
-              "id": "nexus_docker_production_read_api_ping",
+              "http": "http://localhost:#{nexus_management_port}#{nexus_proxy_path}/service/rest/v1/status",
+              "id": "nexus_docker_production_read_status",
               "interval": "15s",
               "method": "GET",
-              "name": "Nexus Docker Production read repository ping",
+              "name": "Nexus Docker Production repository read status",
               "timeout": "5s"
             }
           ],
           "enable_tag_override": false,
-          "id": "nexus_docker_production_read_api",
+          "id": "nexus_docker_production_read",
           "name": "docker",
           "port": #{port_http_docker_hosted_production_read},
           "tags": [
@@ -252,16 +252,16 @@ file '/etc/consul/conf.d/nexus-docker-production-write.json' do
           "checks": [
             {
               "header": { "Authorization" : ["Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo"]},
-              "http": "http://localhost:#{nexus_management_port}#{nexus_proxy_path}/service/metrics/ping",
-              "id": "nexus_docker_production_write_api_ping",
+              "http": "http://localhost:#{nexus_management_port}#{nexus_proxy_path}/service/rest/v1/status/writable",
+              "id": "nexus_docker_production_write_status",
               "interval": "15s",
               "method": "GET",
-              "name": "Nexus Docker Production write repository ping",
+              "name": "Nexus Docker Production repository write status",
               "timeout": "5s"
             }
           ],
           "enable_tag_override": false,
-          "id": "nexus_docker_production_write_api",
+          "id": "nexus_docker_production_write",
           "name": "docker",
           "port": #{port_http_docker_hosted_production_write},
           "tags": [
@@ -282,16 +282,16 @@ file '/etc/consul/conf.d/nexus-docker-qa-read.json' do
           "checks": [
             {
               "header": { "Authorization" : ["Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo"]},
-              "http": "http://localhost:#{nexus_management_port}#{nexus_proxy_path}/service/metrics/ping",
-              "id": "nexus_docker_qa_read_api_ping",
+              "http": "http://localhost:#{nexus_management_port}#{nexus_proxy_path}/service/rest/v1/status",
+              "id": "nexus_docker_qa_read_status",
               "interval": "15s",
               "method": "GET",
-              "name": "Nexus Docker QA read repository ping",
+              "name": "Nexus Docker QA repository read status",
               "timeout": "5s"
             }
           ],
           "enable_tag_override": false,
-          "id": "nexus_docker_qa_read_api",
+          "id": "nexus_docker_qa_read",
           "name": "docker",
           "port": #{port_http_docker_hosted_qa_read},
           "tags": [
@@ -312,16 +312,16 @@ file '/etc/consul/conf.d/nexus-docker-qa-write.json' do
           "checks": [
             {
               "header": { "Authorization" : ["Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo"]},
-              "http": "http://localhost:#{nexus_management_port}#{nexus_proxy_path}/service/metrics/ping",
-              "id": "nexus_docker_qa_write_api_ping",
+              "http": "http://localhost:#{nexus_management_port}#{nexus_proxy_path}/service/rest/v1/status/writable",
+              "id": "nexus_docker_qa_write_status",
               "interval": "15s",
               "method": "GET",
-              "name": "Nexus Docker QA write repository ping",
+              "name": "Nexus Docker QA repository write status",
               "timeout": "5s"
             }
           ],
           "enable_tag_override": false,
-          "id": "nexus_docker_qa_write_api",
+          "id": "nexus_docker_qa_write",
           "name": "docker",
           "port": #{port_http_docker_hosted_qa_write},
           "tags": [
@@ -342,12 +342,12 @@ nexus3_api 'role-docker-pull' do
   content "security.addRole('nx-infrastructure-container-pull', 'nx-infrastructure-container-pull'," \
     " 'User with privileges to allow pulling containers from the different container repositories'," \
     " ['nx-repository-view-docker-docker-production-browse', 'nx-repository-view-docker-docker-production-read'], [''])"
-  action :run
+  action %i[create run delete]
 end
 
 nexus3_api 'userNomad' do
-  action :run
-  content "security.addUser('container.pull', 'Container', 'Pull', 'container.pull@vista.co', true, 'container.pull', ['nx-infrastructure-container-pull'])"
+  action %i[create run delete]
+  content "security.addUser('container.pull', 'Container', 'Pull', 'container.pull@calvinverse.net', true, 'container.pull', ['nx-infrastructure-container-pull'])"
 end
 
 # Create the role which is used by the build system for pulling docker containers
@@ -355,7 +355,7 @@ nexus3_api 'role-builds-pull-containers' do
   content "security.addRole('nx-builds-pull-containers', 'nx-builds-pull-containers'," \
     " 'User with privileges to allow pulling containers from the different container repositories'," \
     " ['nx-repository-view-docker-*-browse', 'nx-repository-view-docker-*-read'], [''])"
-  action :run
+  action %i[create run delete]
 end
 
 # Create the role which is used by the build system for pushing docker containers
@@ -363,7 +363,7 @@ nexus3_api 'role-builds-push-containers' do
   content "security.addRole('nx-builds-push-containers', 'nx-builds-push-containers'," \
     " 'User with privileges to allow pushing containers to the different container repositories'," \
     " ['nx-repository-view-docker-*-browse', 'nx-repository-view-docker-*-read', 'nx-repository-view-docker-*-add', 'nx-repository-view-docker-*-edit'], [''])"
-  action :run
+  action %i[create run delete]
 end
 
 # Create the role which is used by the developers to read docker repositories
@@ -371,5 +371,5 @@ nexus3_api 'role-developer-docker' do
   content "security.addRole('nx-developer-docker', 'nx-developer-docker'," \
     " 'User with privileges to allow pulling containers from the docker repositories'," \
     " ['nx-repository-view-docker-*-browse', 'nx-repository-view-docker-*-read'], [''])"
-  action :run
+  action %i[create run delete]
 end

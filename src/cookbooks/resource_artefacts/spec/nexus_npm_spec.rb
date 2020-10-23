@@ -76,16 +76,16 @@ describe 'resource_artefacts::nexus_npm' do
             "checks": [
               {
                 "header": { "Authorization" : ["Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo"]},
-                "http": "http://localhost:#{nexus_management_port}#{nexus_proxy_path}/service/metrics/ping",
-                "id": "nexus_npm_production_read_api_ping",
+                "http": "http://localhost:#{nexus_management_port}#{nexus_proxy_path}/service/rest/v1/status",
+                "id": "nexus_npm_production_read_status",
                 "interval": "15s",
                 "method": "GET",
-                "name": "Nexus NPM Production read repository ping",
+                "name": "Nexus NPM Production repository read status",
                 "timeout": "5s"
               }
             ],
             "enable_tag_override": false,
-            "id": "nexus_npm_production_read_api",
+            "id": "nexus_npm_production_read",
             "name": "npm",
             "port": #{nexus_management_port},
             "tags": [
@@ -107,16 +107,16 @@ describe 'resource_artefacts::nexus_npm' do
             "checks": [
               {
                 "header": { "Authorization" : ["Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo"]},
-                "http": "http://localhost:#{nexus_management_port}#{nexus_proxy_path}/service/metrics/ping",
-                "id": "nexus_npm_production_write_api_ping",
+                "http": "http://localhost:#{nexus_management_port}#{nexus_proxy_path}/service/rest/v1/status/writable",
+                "id": "nexus_npm_production_write_status",
                 "interval": "15s",
                 "method": "GET",
-                "name": "Nexus NPM Production write repository ping",
+                "name": "Nexus NPM Production repository write status",
                 "timeout": "5s"
               }
             ],
             "enable_tag_override": false,
-            "id": "nexus_npm_production_write_api",
+            "id": "nexus_npm_production_write",
             "name": "npm",
             "port": #{nexus_management_port},
             "tags": [

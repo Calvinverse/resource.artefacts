@@ -61,68 +61,190 @@ describe 'resource_artefacts::nexus_artefacts' do
   context 'registers the service with consul' do
     let(:chef_run) { ChefSpec::SoloRunner.converge(described_recipe) }
 
-    consul_nexus_artefact_production_config_content = <<~JSON
+    consul_nexus_artefact_production_read_config_content = <<~JSON
       {
         "services": [
           {
             "checks": [
               {
                 "header": { "Authorization" : ["Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo"]},
-                "http": "http://localhost:#{nexus_management_port}#{nexus_proxy_path}/service/metrics/ping",
-                "id": "nexus_artefacts_production_api_ping",
+                "http": "http://localhost:#{nexus_management_port}#{nexus_proxy_path}/service/rest/v1/status",
+                "id": "nexus_artefacts_production_read_status",
                 "interval": "15s",
                 "method": "GET",
-                "name": "Nexus artefacts production repository ping",
+                "name": "Nexus artefacts production repository read status",
                 "timeout": "5s"
               }
             ],
             "enable_tag_override": false,
-            "id": "nexus_artefacts_production_api",
+            "id": "nexus_artefacts_production_read",
             "name": "artefacts",
             "port": #{nexus_management_port},
             "tags": [
-              "read-production",
+              "read-production"
+            ]
+          }
+        ]
+      }
+    JSON
+    it 'creates the /etc/consul/conf.d/nexus-artefacts-production-read.json' do
+      expect(chef_run).to create_file('/etc/consul/conf.d/nexus-artefacts-production-read.json')
+        .with_content(consul_nexus_artefact_production_read_config_content)
+    end
+
+    consul_nexus_artefact_production_write_config_content = <<~JSON
+      {
+        "services": [
+          {
+            "checks": [
+              {
+                "header": { "Authorization" : ["Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo"]},
+                "http": "http://localhost:#{nexus_management_port}#{nexus_proxy_path}/service/rest/v1/status/writable",
+                "id": "nexus_artefacts_production_write_status",
+                "interval": "15s",
+                "method": "GET",
+                "name": "Nexus artefacts production repository write status",
+                "timeout": "5s"
+              }
+            ],
+            "enable_tag_override": false,
+            "id": "nexus_artefacts_production_write",
+            "name": "artefacts",
+            "port": #{nexus_management_port},
+            "tags": [
               "write-production"
             ]
           }
         ]
       }
     JSON
-    it 'creates the /etc/consul/conf.d/nexus-artefacts-production.json' do
-      expect(chef_run).to create_file('/etc/consul/conf.d/nexus-artefacts-production.json')
-        .with_content(consul_nexus_artefact_production_config_content)
+    it 'creates the /etc/consul/conf.d/nexus-artefacts-production-write.json' do
+      expect(chef_run).to create_file('/etc/consul/conf.d/nexus-artefacts-production-write.json')
+        .with_content(consul_nexus_artefact_production_write_config_content)
     end
 
-    consul_nexus_artefact_qa_config_content = <<~JSON
+    consul_nexus_artefact_qa_read_config_content = <<~JSON
       {
         "services": [
           {
             "checks": [
               {
                 "header": { "Authorization" : ["Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo"]},
-                "http": "http://localhost:#{nexus_management_port}#{nexus_proxy_path}/service/metrics/ping",
-                "id": "nexus_artefacts_qa_api_ping",
+                "http": "http://localhost:#{nexus_management_port}#{nexus_proxy_path}/service/rest/v1/status",
+                "id": "nexus_artefacts_qa_read_status",
                 "interval": "15s",
                 "method": "GET",
-                "name": "Nexus artefacts QA repository ping",
+                "name": "Nexus artefacts QA repository read status",
                 "timeout": "5s"
               }
             ],
             "enable_tag_override": false,
-            "id": "nexus_artefacts_qa_api",
+            "id": "nexus_artefacts_qa_read",
             "name": "artefacts",
             "port": #{nexus_management_port},
             "tags": [
-              "read-qa",
+              "read-qa"
+            ]
+          }
+        ]
+      }
+    JSON
+    it 'creates the /etc/consul/conf.d/nexus-artefacts-qa-read.json' do
+      expect(chef_run).to create_file('/etc/consul/conf.d/nexus-artefacts-qa-read.json')
+        .with_content(consul_nexus_artefact_qa_read_config_content)
+    end
+
+    consul_nexus_artefact_qa_write_config_content = <<~JSON
+      {
+        "services": [
+          {
+            "checks": [
+              {
+                "header": { "Authorization" : ["Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo"]},
+                "http": "http://localhost:#{nexus_management_port}#{nexus_proxy_path}/service/rest/v1/status/writable",
+                "id": "nexus_artefacts_qa_write_status",
+                "interval": "15s",
+                "method": "GET",
+                "name": "Nexus artefacts QA repository write status",
+                "timeout": "5s"
+              }
+            ],
+            "enable_tag_override": false,
+            "id": "nexus_artefacts_qa_write",
+            "name": "artefacts",
+            "port": #{nexus_management_port},
+            "tags": [
               "write-qa"
             ]
           }
         ]
       }
     JSON
-    it 'creates the /etc/consul/conf.d/nexus-artefacts-qa.json' do
-      expect(chef_run).to create_file('/etc/consul/conf.d/nexus-artefacts-qa.json')
-        .with_content(consul_nexus_artefact_qa_config_content)
+    it 'creates the /etc/consul/conf.d/nexus-artefacts-qa-write.json' do
+      expect(chef_run).to create_file('/etc/consul/conf.d/nexus-artefacts-qa-write.json')
+        .with_content(consul_nexus_artefact_qa_write_config_content)
+    end
+
+    consul_nexus_artefact_development_read_config_content = <<~JSON
+      {
+        "services": [
+          {
+            "checks": [
+              {
+                "header": { "Authorization" : ["Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo"]},
+                "http": "http://localhost:#{nexus_management_port}#{nexus_proxy_path}/service/rest/v1/status",
+                "id": "nexus_artefacts_development_read_status",
+                "interval": "15s",
+                "method": "GET",
+                "name": "Nexus artefacts Development repository read status",
+                "timeout": "5s"
+              }
+            ],
+            "enable_tag_override": false,
+            "id": "nexus_artefacts_development_read",
+            "name": "artefacts",
+            "port": #{nexus_management_port},
+            "tags": [
+              "read-development"
+            ]
+          }
+        ]
+      }
+    JSON
+    it 'creates the /etc/consul/conf.d/nexus-artefacts-development-read.json' do
+      expect(chef_run).to create_file('/etc/consul/conf.d/nexus-artefacts-development-read.json')
+        .with_content(consul_nexus_artefact_development_read_config_content)
+    end
+
+    consul_nexus_artefact_development_write_config_content = <<~JSON
+      {
+        "services": [
+          {
+            "checks": [
+              {
+                "header": { "Authorization" : ["Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo"]},
+                "http": "http://localhost:#{nexus_management_port}#{nexus_proxy_path}/service/rest/v1/status/writable",
+                "id": "nexus_artefacts_development_write_status",
+                "interval": "15s",
+                "method": "GET",
+                "name": "Nexus artefacts Development repository write status",
+                "timeout": "5s"
+              }
+            ],
+            "enable_tag_override": false,
+            "id": "nexus_artefacts_development_write",
+            "name": "artefacts",
+            "port": #{nexus_management_port},
+            "tags": [
+              "write-development"
+            ]
+          }
+        ]
+      }
+    JSON
+    it 'creates the /etc/consul/conf.d/nexus-artefacts-development-write.json' do
+      expect(chef_run).to create_file('/etc/consul/conf.d/nexus-artefacts-development-write.json')
+        .with_content(consul_nexus_artefact_development_write_config_content)
     end
 
     consul_nexus_artefact_development_config_content = <<~JSON

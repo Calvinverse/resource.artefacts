@@ -45,6 +45,16 @@ describe 'resource_artefacts::nexus_service' do
       expect(chef_run).to disable_service('nexus')
     end
 
+    it 'disables the nexus3_nexus service' do
+      expect(chef_run).to disable_service('nexus3_nexus')
+    end
+
+    it 'deletes the nexus3_nexus service' do
+      expect(chef_run).to stop_systemd_unit('nexus3_nexus')
+      expect(chef_run).to disable_systemd_unit('nexus3_nexus')
+      expect(chef_run).to delete_systemd_unit('nexus3_nexus')
+    end
+
     nexus_start_script_content = <<~SCRIPT
       #!/bin/sh
 
@@ -132,6 +142,7 @@ describe 'resource_artefacts::nexus_service' do
       application-host=0.0.0.0
       nexus-args=${jetty.etc}/jetty.xml,${jetty.etc}/jetty-http.xml,${jetty.etc}/jetty-requestlog.xml
       nexus-context-path=#{nexus_proxy_path}
+      nexus.onboarding.enabled=false
     PROPERTIES
     it 'creates the /home/nexus/etc/nexus.properties' do
       expect(chef_run).to create_file('/home/nexus/etc/nexus.properties')

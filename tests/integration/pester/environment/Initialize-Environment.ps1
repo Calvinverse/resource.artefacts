@@ -31,13 +31,8 @@ function Initialize-Environment
         Set-VaultSecrets
         Set-ConsulKV
 
-        Write-Output "Giving consul-template 30 seconds to process the data ..."
-        Start-Sleep -Seconds 30
-    }
-    catch
     {
         $currentErrorActionPreference = $ErrorActionPreference
-        $ErrorActionPreference = 'Continue'
 
         try
         {
@@ -96,6 +91,11 @@ function Set-ConsulKV
     $ErrorActionPreference = 'Stop'
 
     Write-Output "Setting consul key-values ..."
+
+    # Load config/services/backup
+    & consul kv put -http-addr=http://127.0.0.1:8550 config/services/backups/protocols/read/host 'read.backups'
+    & consul kv put -http-addr=http://127.0.0.1:8550 config/services/nexus/restore/datacenter 'test-integration'
+    & consul kv put -http-addr=http://127.0.0.1:8550 config/services/nexus/restore/environment 'test-integration'
 
     # Load config/services/consul
     & consul kv put -http-addr=http://127.0.0.1:8550 config/services/consul/datacenter 'test-integration'

@@ -30,15 +30,20 @@ remote_file jolokia_jar_path do
 end
 
 #
-# CONSUL-TEMPLATE FILES FOR TELEGRAF
+# ALLOW TELEGRAF THROUGH THE FIREWALL
 #
 
-telegraf_metrics_username = node['nexus3']['user']['telegraf']['username']
-telegraf_metrics_password = node['nexus3']['user']['telegraf']['password']
-nexus3_api 'user-telegraf' do
-  action :run
-  content "security.addUser('#{telegraf_metrics_username}', 'Telegraf', 'Metrics', 'telegraf.metrics@vista.co', true, '#{telegraf_metrics_password}', ['nx-metrics'])"
+telegraf_http_listener_port = node['telegraf']['http-listener']['port']
+firewall_rule 'telegraf-http-listener' do
+  command :allow
+  description 'Allow Telegraf HTTP listener traffic'
+  dest_port telegraf_http_listener_port
+  direction :in
 end
+
+#
+# CONSUL-TEMPLATE FILES FOR TELEGRAF
+#
 
 consul_template_config_path = node['consul_template']['config_path']
 consul_template_template_path = node['consul_template']['template_path']
@@ -49,6 +54,8 @@ jolokia_agent_port = node['jolokia']['agent']['port']
 
 nexus_management_port = node['nexus3']['port']
 nexus_proxy_path = node['nexus3']['proxy_path']
+
+telegraf_http_listener_path = node['telegraf']['http-listener']['path']
 
 telegraf_service = 'telegraf'
 telegraf_config_directory = node['telegraf']['config_directory']
@@ -122,6 +129,101 @@ file "#{consul_template_template_path}/#{telegraf_jolokia_inputs_template_file}"
         tag_keys = ["name"]
         tag_prefix = "buffer_"
 
+  CONF
+  group 'root'
+  mode '0550'
+  owner 'root'
+end
+
+file "#{consul_template_config_path}/telegraf_jolokia_inputs.hcl" do
+  action :create
+  content <<~HCL
+    # This block defines the configuration for a template. Unlike other blocks,
+    # this block may be specified multiple times to configure multiple templates.
+    # It is also possible to configure templates via the CLI directly.
+    template {
+      # This is the source file on disk to use as the input template. This is often
+      # called the "Consul Template template". This option is required if not using
+      # the `contents` option.
+      source = "#{consul_template_template_path}/#{telegraf_jolokia_inputs_template_file}"
+
+      # This is the destination path on disk where the source template will render.
+      # If the parent directories do not exist, Consul Template will attempt to
+      # create them, unless create_dest_dirs is false.
+      destination = "#{telegraf_config_directory}/inputs_jolokia.conf"
+
+      # This options tells Consul Template to create the parent directories of the
+      # destination path if they do not exist. The default value is true.
+      create_dest_dirs = false
+
+      # This is the optional command to run when the template is rendered. The
+      # command will only run if the resulting template changes. The command must
+      # return within 30s (configurable), and it must have a successful exit code.
+      # Consul Template is not a replacement for a process monitor or init system.
+      command = "/bin/bash -c 'chown #{node['telegraf']['service_user']}:#{node['telegraf']['service_group']} #{telegraf_config_directory}/inputs_jolokia.conf && systemctl restart #{telegraf_service}'"
+
+      # This is the maximum amount of time to wait for the optional command to
+      # return. Default is 30s.
+      command_timeout = "15s"
+
+      # Exit with an error when accessing a struct or map field/key that does not
+      # exist. The default behavior will print "<no value>" when accessing a field
+      # that does not exist. It is highly recommended you set this to "true" when
+      # retrieving secrets from Vault.
+      error_on_missing_key = false
+
+      # This is the permission to render the file. If this option is left
+      # unspecified, Consul Template will attempt to match the permissions of the
+      # file that already exists at the destination path. If no file exists at that
+      # path, the permissions are 0644.
+      perms = 0550
+
+      # This option backs up the previously rendered template at the destination
+      # path before writing a new one. It keeps exactly one backup. This option is
+      # useful for preventing accidental changes to the data without having a
+      # rollback strategy.
+      backup = true
+
+      # These are the delimiters to use in the template. The default is "{{" and
+      # "}}", but for some templates, it may be easier to use a different delimiter
+      # that does not conflict with the output file itself.
+      left_delimiter  = "{{"
+      right_delimiter = "}}"
+
+      # This is the `minimum(:maximum)` to wait before rendering a new template to
+      # disk and triggering a command, separated by a colon (`:`). If the optional
+      # maximum value is omitted, it is assumed to be 4x the required minimum value.
+      # This is a numeric time with a unit suffix ("5s"). There is no default value.
+      # The wait value for a template takes precedence over any globally-configured
+      # wait.
+      wait {
+        min = "2s"
+        max = "10s"
+      }
+    }
+  HCL
+  group 'root'
+  mode '0550'
+  owner 'root'
+end
+
+telegraf_metrics_username = node['nexus3']['users']['telegraf']['username']
+telegraf_metrics_password = node['nexus3']['users']['telegraf']['password']
+nexus3_api 'user-telegraf' do
+  action %i[create run delete]
+  content "security.addUser('#{telegraf_metrics_username}', 'Telegraf', 'Metrics', 'telegraf.metrics@calvinverse.net', true, '#{telegraf_metrics_password}', ['nx-metrics'])"
+end
+
+telegraf_http_inputs_template_file = 'telegraf_http_inputs.ctmpl'
+file "#{consul_template_template_path}/#{telegraf_http_inputs_template_file}" do
+  action :create
+  content <<~CONF
+    # Telegraf Configuration
+
+    ###############################################################################
+    #                            INPUT PLUGINS                                    #
+    ###############################################################################
+
     [[inputs.http]]
       ## One or more URLs from which to read formatted metrics
       urls = [
@@ -164,13 +266,59 @@ file "#{consul_template_template_path}/#{telegraf_jolokia_inputs_template_file}"
       [inputs.http.tags]
         influxdb_database = "{{ keyOrDefault "config/services/metrics/databases/services" "services" }}"
         service = "nexus"
+
+    [[inputs.http_listener_v2]]
+      ## Address and port to host HTTP listener on
+      service_address = ":#{telegraf_http_listener_port}"
+
+      ## Path to listen to.
+      path = "#{telegraf_http_listener_path}"
+
+      ## HTTP methods to accept.
+      methods = ["POST"]
+
+      ## maximum duration before timing out read of the request
+      # read_timeout = "10s"
+      ## maximum duration before timing out write of the response
+      # write_timeout = "10s"
+
+      ## Maximum allowed http request body size in bytes.
+      ## 0 means to use the default of 524,288,000 bytes (500 mebibytes)
+      # max_body_size = "500MB"
+
+      ## Part of the request to consume.  Available options are "body" and
+      ## "query".
+      ## data_source = "body"
+
+      ## Set one or more allowed client CA certificate file names to
+      ## enable mutually authenticated TLS connections
+      # tls_allowed_cacerts = ["/etc/telegraf/clientca.pem"]
+
+      ## Add service certificate and key
+      # tls_cert = "/etc/telegraf/cert.pem"
+      # tls_key = "/etc/telegraf/key.pem"
+
+      ## Optional username and password to accept for HTTP basic authentication.
+      ## You probably want to make sure you have TLS configured above for this.
+      # basic_username = "foobar"
+      # basic_password = "barfoo"
+
+      ## Data format to consume.
+      ## Each data format has its own unique set of configuration options, read
+      ## more about them here:
+      ## https://github.com/influxdata/telegraf/blob/master/docs/DATA_FORMATS_INPUT.md
+      data_format = "influx"
+
+      [inputs.http_listener_v2.tags]
+        influxdb_database = "{{ keyOrDefault "config/services/metrics/databases/services" "services" }}"
+        service = "nexus"
   CONF
   group 'root'
   mode '0550'
   owner 'root'
 end
 
-file "#{consul_template_config_path}/telegraf_jolokia_inputs.hcl" do
+file "#{consul_template_config_path}/telegraf_http_inputs.hcl" do
   action :create
   content <<~HCL
     # This block defines the configuration for a template. Unlike other blocks,
@@ -180,12 +328,12 @@ file "#{consul_template_config_path}/telegraf_jolokia_inputs.hcl" do
       # This is the source file on disk to use as the input template. This is often
       # called the "Consul Template template". This option is required if not using
       # the `contents` option.
-      source = "#{consul_template_template_path}/#{telegraf_jolokia_inputs_template_file}"
+      source = "#{consul_template_template_path}/#{telegraf_http_inputs_template_file}"
 
       # This is the destination path on disk where the source template will render.
       # If the parent directories do not exist, Consul Template will attempt to
       # create them, unless create_dest_dirs is false.
-      destination = "#{telegraf_config_directory}/inputs_jolokia.conf"
+      destination = "#{telegraf_config_directory}/inputs_http.conf"
 
       # This options tells Consul Template to create the parent directories of the
       # destination path if they do not exist. The default value is true.
@@ -195,7 +343,7 @@ file "#{consul_template_config_path}/telegraf_jolokia_inputs.hcl" do
       # command will only run if the resulting template changes. The command must
       # return within 30s (configurable), and it must have a successful exit code.
       # Consul Template is not a replacement for a process monitor or init system.
-      command = "/bin/bash -c 'chown #{node['telegraf']['service_user']}:#{node['telegraf']['service_group']} #{telegraf_config_directory}/inputs_jolokia.conf && systemctl restart #{telegraf_service}'"
+      command = "/bin/bash -c 'chown #{node['telegraf']['service_user']}:#{node['telegraf']['service_group']} #{telegraf_config_directory}/inputs_http.conf && systemctl restart #{telegraf_service}'"
 
       # This is the maximum amount of time to wait for the optional command to
       # return. Default is 30s.

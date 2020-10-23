@@ -192,6 +192,21 @@ service 'nexus' do
   action :disable
 end
 
+# The cookbook now makes a nexus3_nexus service, which we don't want, so nuke that one
+service 'nexus3_nexus' do
+  action :disable
+end
+
+systemd_unit 'nexus3_nexus' do
+  action %i[stop disable delete]
+end
+
+# For some reason systemd_unit delete doesn't actually delete the file, so we nuke it
+# the hard way
+file '/etc/systemd/system/nexus3_nexus.service' do
+  action :delete
+end
+
 # Update the systemd service configuration for Nexus so that we can set
 # the number of file handles for the given user
 # See here: https://help.sonatype.com/display/NXRM3/System+Requirements#filehandles
@@ -229,5 +244,6 @@ file "#{nexus_data_path}/etc/nexus.properties" do
     application-host=0.0.0.0
     nexus-args=${jetty.etc}/jetty.xml,${jetty.etc}/jetty-http.xml,${jetty.etc}/jetty-requestlog.xml
     nexus-context-path=#{nexus_proxy_path}
+    nexus.onboarding.enabled=false
   PROPERTIES
 end

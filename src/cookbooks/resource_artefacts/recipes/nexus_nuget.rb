@@ -120,7 +120,7 @@ nexus3_api 'role-builds-pull-nuget' do
   content "security.addRole('nx-builds-pull-nuget', 'nx-builds-pull-nuget'," \
     " 'User with privileges to allow pulling packages from the different nuget repositories'," \
     " ['nx-repository-view-nuget-*-browse', 'nx-repository-view-nuget-*-read'], [''])"
-  action :run
+  action %i[create run delete]
 end
 
 # Create the role which is used by the build system for pushing nuget packages
@@ -128,7 +128,7 @@ nexus3_api 'role-builds-push-nuget' do
   content "security.addRole('nx-builds-push-nuget', 'nx-builds-push-nuget'," \
     " 'User with privileges to allow pushing packages to the different nuget repositories'," \
     " ['nx-apikey-all', 'nx-repository-view-nuget-*-browse', 'nx-repository-view-nuget-*-read', 'nx-repository-view-nuget-*-add', 'nx-repository-view-nuget-*-edit'], [''])"
-  action :run
+  action %i[create run delete]
 end
 
 # Create the role which is used by the developers to read nuget repositories
@@ -136,5 +136,5 @@ nexus3_api 'role-developer-nuget' do
   content "security.addRole('nx-developer-nuget', 'nx-developer-nuget'," \
     " 'User with privileges to allow pulling packages from the nuget repositories'," \
     " ['nx-repository-view-nuget-*-browse', 'nx-repository-view-nuget-*-read'], [''])"
-  action :run
+  action %i[create run delete]
 end

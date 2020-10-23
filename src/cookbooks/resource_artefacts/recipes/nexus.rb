@@ -7,7 +7,7 @@
 # Copyright 2017, P. van der Velde
 #
 
-# Configure the service user under which consul will be run
+# Configure the service user under which nexus will be run
 poise_service_user node['nexus3']['service_user'] do
   group node['nexus3']['service_group']
 end
@@ -56,8 +56,40 @@ end
 nexus_instance_name = node['nexus3']['instance_name']
 nexus3 nexus_instance_name do
   action :install
-  group node['nexus3']['service_group']
-  user node['nexus3']['service_user']
+  nexus3_group node['nexus3']['service_group']
+  nexus3_user node['nexus3']['service_user']
+end
+
+# Since Nexus 3.17.0 the default admin password is generated, so we need to get
+# the actual password before we do something useful
+# See: https://github.com/criteo-cookbooks/nexus3/issues/98
+#
+# It may take a while for Nexus to start and write the password file so we hang around
+# for a little while to ensure that the file exists
+ruby_block 'wait for nexus password file' do
+  block do
+    true until ::File.exist?("#{node['nexus3']['data']}/admin.password")
+  end
+end
+
+ruby_block 'read random nexus password into attribute' do
+  block do
+    node.override['nexus3']['api']['password'] = File.read("#{node['nexus3']['data']}/admin.password")
+  end
+  action :run
+end
+
+log 'Nexus generated password' do
+  level :warn
+  message "Nexus generated password: #{node['nexus3']['api']['password']}"
+end
+
+# Rename the password file chef generated to trick Nexus into thinking that everything is ok
+ruby_block 'rename nexus password file' do
+  block do
+    ::File.rename("#{node['nexus3']['data']}/admin.password", "#{node['nexus3']['data']}/admin.generated.password")
+  end
+  not_if { File.exist?("#{node['nexus3']['data']}/admin.generated.password") }
 end
 
 #
@@ -98,12 +130,12 @@ nexus3_api 'role-metrics' do
   content "security.addRole('nx-metrics', 'nx-metrics'," \
     " 'User with privileges to allow read access to the Nexus metrics'," \
     " ['nx-metrics-all'], ['nx-anonymous'])"
-  action :run
+  action %i[create run delete]
 end
 
 nexus3_api 'userConsul' do
-  action :run
-  content "security.addUser('consul.health', 'Consul', 'Health', 'consul.health@example.com', true, 'consul.health', ['nx-metrics'])"
+  action %i[create run delete]
+  content "security.addUser('consul.health', 'Consul', 'Health', 'consul.health@calvinverse.net', true, 'consul.health', ['nx-healthcheck-read', 'nx-healthcheck-summary-read'])"
 end
 
 nexus_proxy_path = node['nexus3']['proxy_path']
@@ -116,11 +148,11 @@ file '/etc/consul/conf.d/nexus-management.json' do
           "checks": [
             {
               "header": { "Authorization" : ["Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo"]},
-              "http": "http://localhost:#{nexus_management_port}#{nexus_proxy_path}/service/metrics/ping",
-              "id": "nexus_management_api_ping",
+              "http": "http://localhost:#{nexus_management_port}#{nexus_proxy_path}/service/rest/v1/status",
+              "id": "nexus_management_status",
               "interval": "15s",
               "method": "GET",
-              "name": "Nexus management ping",
+              "name": "Nexus management status",
               "timeout": "5s"
             }
           ],
@@ -148,31 +180,30 @@ nexus3_api 'role-developer-search' do
   content "security.addRole('nx-developer-search', 'nx-developer-search'," \
     " 'User with privileges to allow searching for packages in the different repositories'," \
     " ['nx-search-read', 'nx-selectors-read'], [''])"
-  action :run
+  action %i[create run delete]
 end
 
 nexus3_api 'role-consul-template-local' do
   content "security.addRole('role-consul-template-local', 'role-consul-template-local'," \
     " 'User with privileges required for Consul-Template to configure Nexus'," \
     " ['nx-ldap-all', 'nx-script-*-*'], [''])"
-  action :run
+  action %i[create run delete]
 end
 
-ldap_config_username = node['nexus3']['user']['ldap_config']['username']
-ldap_config_password = node['nexus3']['user']['ldap_config']['password']
+ldap_config_username = node['nexus3']['users']['ldap_config']['username']
+ldap_config_password = node['nexus3']['users']['ldap_config']['password']
 nexus3_api 'user-consul-template' do
-  action :run
-  content "security.addUser('#{ldap_config_username}', 'Consul', 'Template', 'consul.template@localhost.example.com', true, '#{ldap_config_password}', ['role-consul-template-local'])"
+  action %i[create run delete]
+  content "security.addUser('#{ldap_config_username}', 'Consul', 'Template', 'consul.template@calvinverse.net', true, '#{ldap_config_password}', ['role-consul-template-local'])"
 end
 
 #
-# DISABLE ANONYMOUS ACCESS
+# ENABLE ANONYMOUS ACCESS
 #
 
 nexus3_api 'anonymous' do
-  action :run
-  content 'security.setAnonymousAccess(false)'
-  not_if { ::File.exist?("#{node['nexus3']['data']}/tmp") }
+  action %i[create run delete]
+  content 'security.setAnonymousAccess(true)'
 end
 
 #
@@ -182,41 +213,48 @@ end
 consul_template_config_path = node['consul_template']['config_path']
 consul_template_template_path = node['consul_template']['template_path']
 
+nexus_service_name = node['nexus3']['service_name']
+
+flag_restore = node['restore']['path']['flag']
+
 nexus_ldap_script_template_file = node['nexus3']['consul_template_ldap_script_file']
 file "#{consul_template_template_path}/#{nexus_ldap_script_template_file}" do
   action :create
   content <<~CONF
     #!/bin/sh
 
+    # The restore service is: {{ file "#{flag_restore}" }}
     {{ if keyExists "config/environment/directory/initialized" }}
 
-    run_nexus_script() {
-      name=$1
-      file=$2
-      host=$3
-      username=$4
-      password=$5
+    if [ "$(cat #{flag_restore})" = "#{node['restore']['status']['done']}" ]; then
 
-      content=$(tr -d '\n' < $file)
-      cat <<EOT > "/tmp/$name.json"
+      run_nexus_script() {
+        name=$1
+        file=$2
+        host=$3
+        username=$4
+        password=$5
+
+        content=$(tr -d '\n' < $file)
+        cat <<EOT > "/tmp/$name.json"
     {
       "name": "$name",
       "type": "groovy",
       "content": "$content"
     }
     EOT
-      curl -v -X POST -u "$username:$password" --header "Content-Type: application/json" "$host#{nexus_proxy_path}/service/rest/v1/script" -d @"/tmp/$name.json"
-      echo "Published $file as $name"
+        curl --request POST --silent --show-error --fail --retry 10 --retry-delay 10 -u "$username:$password" --header "Content-Type: application/json" "$host#{nexus_proxy_path}/service/rest/v1/script" -d @"/tmp/$name.json"
+        echo "Published $file as $name"
 
-      curl -v -X POST -u "$username:$password" --header "Content-Type: text/plain" "$host#{nexus_proxy_path}/service/rest/v1/script/$name/run"
-      echo "Successfully executed $name script"
+        curl --request POST --silent --show-error --fail --retry 10 --retry-delay 10 -u "$username:$password" --header "Content-Type: text/plain" "$host#{nexus_proxy_path}/service/rest/v1/script/$name/run"
+        echo "Successfully executed $name script"
 
-      curl -v -X DELETE -u "$username:$password" "$host#{nexus_proxy_path}/service/rest/v1/script/$name"
-      echo "Deleted script $name"
-    }
+        curl --request DELETE --silent --show-error --fail --retry 10 --retry-delay 10 -u "$username:$password" "$host#{nexus_proxy_path}/service/rest/v1/script/$name"
+        echo "Deleted script $name"
+      }
 
-    echo 'Write the script to configure LDAP in Nexus'
-    cat <<EOT > /tmp/nexus_ldap.groovy
+      echo 'Write the script to configure LDAP in Nexus'
+      cat <<EOT > /tmp/nexus_ldap.groovy
     import org.sonatype.nexus.ldap.persist.*;
     import org.sonatype.nexus.ldap.persist.entity.*;
     import org.sonatype.nexus.security.SecuritySystem;
@@ -279,31 +317,32 @@ file "#{consul_template_template_path}/#{nexus_ldap_script_template_file}" do
     security.securitySystem.deleteUser('admin', 'default');
     EOT
 
-    if ( ! $(systemctl is-enabled --quiet #{nexus_instance_name}) ); then
-      systemctl enable #{nexus_instance_name}
+      if ( ! $(systemctl is-enabled --quiet #{nexus_service_name}) ); then
+        systemctl enable #{nexus_service_name}
 
-      while true; do
-        if ( $(systemctl is-enabled --quiet #{nexus_instance_name}) ); then
-            break
-        fi
+        while true; do
+          if ( $(systemctl is-enabled --quiet #{nexus_service_name}) ); then
+              break
+          fi
 
-        sleep 1
-      done
+          sleep 1
+        done
+      fi
+
+      if ( ! $(systemctl is-active --quiet #{nexus_service_name}) ); then
+        systemctl start #{nexus_service_name}
+
+        while true; do
+          if ( $(systemctl is-active --quiet #{nexus_service_name}) ); then
+              break
+          fi
+
+          sleep 1
+        done
+      fi
+
+      run_nexus_script setLdap /tmp/nexus_ldap.groovy 'http://localhost:#{nexus_management_port}' '#{ldap_config_username}' '#{ldap_config_password}'
     fi
-
-    if ( ! $(systemctl is-active --quiet #{nexus_instance_name}) ); then
-      systemctl start #{nexus_instance_name}
-
-      while true; do
-        if ( $(systemctl is-active --quiet #{nexus_instance_name}) ); then
-            break
-        fi
-
-        sleep 1
-      done
-    fi
-
-    run_nexus_script setLdap /tmp/nexus_ldap.groovy 'http://localhost:#{nexus_management_port}' '#{ldap_config_username}' '#{ldap_config_password}'
 
     {{ else }}
     echo 'The LDAP information is not available in the Consul K-V. Will not update Nexus.'

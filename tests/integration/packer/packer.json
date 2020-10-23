@@ -30,8 +30,8 @@
             "http_directory": "{{ user `dir_http_user` }}",
             "http_port_min": 8150,
             "http_port_max": 8160,
+            "memory": "{{ user `vm_ram_size_in_mb` }}",
             "output_directory": "{{ user `dir_temp` }}/test-{{ user `vm_name` }}",
-            "ram_size": "{{ user `vm_ram_size_in_mb` }}",
             "secondary_iso_images": [
                 "{{ user `dir_deploy` }}/{{ user `product_name` }}-test-provision.iso"
             ],

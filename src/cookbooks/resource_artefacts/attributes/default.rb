@@ -1,5 +1,13 @@
 # frozen_string_literal: true
 
+backup_path = '/srv/backup/scratch'
+
+#
+# BACKUP
+#
+
+default['backup']['base_path'] = backup_path
+
 #
 # CONSULTEMPLATE
 #
@@ -44,20 +52,36 @@ default['jolokia']['url']['jar'] = "http://search.maven.org/remotecontent?filepa
 # NEXUS
 #
 
+<<<<<<< Updated upstream
 default['nexus3']['version'] = '3.15.2-04'
+=======
+default['nexus3']['version'] = '3.18.1-01'
+default['nexus3']['url'] = "https://download.sonatype.com/nexus/3/nexus-#{node['nexus3']['version']}-unix.tar.gz"
+>>>>>>> Stashed changes
 default['nexus3']['path'] = '/opt'
 default['nexus3']['data'] = '/home/nexus'
 default['nexus3']['home'] = '/opt/nexus'
+default['nexus3']['scripts'] = '/etc/nexus'
 default['nexus3']['install_path'] = "#{node['nexus3']['path']}/nexus"
 default['nexus3']['port'] = 8081
 default['nexus3']['proxy_path'] = '/artefacts'
-default['nexus3']['blob_store_path'] = '/srv/nexus/blob'
+default['nexus3']['data_store_path'] = '/srv/nexus'
+default['nexus3']['blob_store_path'] = "#{node['nexus3']['data_store_path']}/blob"
 default['nexus3']['scratch_blob_store_path'] = "#{node['nexus3']['blob_store_path']}/scratch"
+default['nexus3']['backup_path'] = "#{backup_path}/nexus"
+default['nexus3']['restore_path'] = "#{backup_path}/restore"
 default['nexus3']['instance_name'] = 'nexus'
+default['nexus3']['service_name'] = node['nexus3']['instance_name']
 
 # users
-default['nexus3']['user']['ldap_config']['username'] = 'consul.template'
-default['nexus3']['user']['ldap_config']['password'] = SecureRandom.uuid
+default['nexus3']['users']['backup']['username'] = 'nexus.backup'
+default['nexus3']['users']['backup']['password'] = SecureRandom.uuid
+
+default['nexus3']['users']['ldap_config']['username'] = 'consul.template'
+default['nexus3']['users']['ldap_config']['password'] = SecureRandom.uuid
+
+default['nexus3']['users']['telegraf']['username'] = 'telegraf.metrics'
+default['nexus3']['users']['telegraf']['password'] = SecureRandom.uuid
 
 default['nexus3']['user']['telegraf']['username'] = 'telegraf.metrics'
 default['nexus3']['user']['telegraf']['password'] = SecureRandom.uuid
@@ -85,8 +109,22 @@ default['nexus3']['script_ldap_file'] = '/tmp/nexus_ldap.sh'
 
 # override defaults
 default['nexus3']['api']['host'] = "http://localhost:#{node['nexus3']['port']}"
-default['nexus3']['api']['endpoint'] = "#{node['nexus3']['api']['host']}/service/rest/v1/script"
+default['nexus3']['api']['endpoint'] = "#{node['nexus3']['api']['host']}/service/rest/v1/script/"
 default['nexus3']['api']['sensitive'] = false
+
+# scripts
+default['nexus3']['script']['path']['nexus_utilities'] = "#{node['nexus3']['scripts']}/nexus_utilities.sh"
+
+#
+# RESTORE
+#
+
+default['restore']['service_name'] = 'restore'
+
+default['restore']['path']['flag'] = '/var/log/restore.flag'
+
+default['restore']['status']['done'] = 'Done'
+default['restore']['status']['waiting'] = 'Waiting'
 
 #
 # TELEGRAF
@@ -95,3 +133,6 @@ default['nexus3']['api']['sensitive'] = false
 default['telegraf']['service_user'] = 'telegraf'
 default['telegraf']['service_group'] = 'telegraf'
 default['telegraf']['config_directory'] = '/etc/telegraf/telegraf.d'
+
+default['telegraf']['http-listener']['port'] = 9090
+default['telegraf']['http-listener']['path'] = '/telegraf'

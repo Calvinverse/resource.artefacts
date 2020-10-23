@@ -44,20 +44,20 @@ file '/etc/consul/conf.d/nexus-gems-mirror.json' do
           "checks": [
             {
               "header": { "Authorization" : ["Basic Y29uc3VsLmhlYWx0aDpjb25zdWwuaGVhbHRo"]},
-              "http": "http://localhost:#{nexus_management_port}#{nexus_proxy_path}/service/metrics/ping",
-              "id": "nexus_gems_mirror_api_ping",
+              "http": "http://localhost:#{nexus_management_port}#{nexus_proxy_path}/service/rest/v1/status",
+              "id": "nexus_gems_mirror_read_status",
               "interval": "15s",
               "method": "GET",
-              "name": "Nexus Ruby Gems mirror repository ping",
+              "name": "Nexus Ruby Gems mirror repository read status",
               "timeout": "5s"
             }
           ],
           "enable_tag_override": false,
-          "id": "nexus_gems_mirror_api",
+          "id": "nexus_gems_mirror_read",
           "name": "gems",
           "port": #{nexus_management_port},
           "tags": [
-            "read-mirror"
+            "read-production"
           ]
         }
       ]
@@ -74,7 +74,7 @@ nexus3_api 'role-builds-pull-rubygems' do
   content "security.addRole('nx-builds-pull-rubygems', 'nx-builds-pull-rubygems'," \
     " 'User with privileges to allow pulling packages from the different rubygems repositories'," \
     " ['nx-repository-view-rubygems-*-browse', 'nx-repository-view-rubygems-*-read'], [''])"
-  action :run
+  action %i[create run delete]
 end
 
 # Create the role which is used by the developers to read gems repositories
@@ -82,5 +82,5 @@ nexus3_api 'role-developer-rubygems' do
   content "security.addRole('nx-developer-rubygems', 'nx-developer-rubygems'," \
     " 'User with privileges to allow pulling packages from the ruby gems repositories'," \
     " ['nx-repository-view-rubygems-*-browse', 'nx-repository-view-rubygems-*-read'], [''])"
-  action :run
+  action %i[create run delete]
 end
